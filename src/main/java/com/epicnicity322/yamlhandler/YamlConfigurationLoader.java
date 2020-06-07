@@ -36,7 +36,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class YamlConfigurationLoader
+public class YamlConfigurationLoader implements ConfigurationLoader
 {
     /**
      * The char separating the sections.
@@ -176,5 +176,24 @@ public class YamlConfigurationLoader
         } catch (ClassCastException e) {
             throw new InvalidConfigurationException("Top level is not a Map.");
         }
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof YamlConfigurationLoader)) return false;
+
+        YamlConfigurationLoader that = (YamlConfigurationLoader) o;
+
+        return sectionSeparator == that.sectionSeparator &&
+                options.getIndent() == that.options.getIndent() &&
+                options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(sectionSeparator, options.getIndent(), options.getDefaultFlowStyle());
     }
 }

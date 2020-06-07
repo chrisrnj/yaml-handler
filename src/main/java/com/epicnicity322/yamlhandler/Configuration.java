@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -112,5 +113,32 @@ public class Configuration extends ConfigurationSection
 
         convertToMapNodes(this, mapNodes);
         return loader.yaml.dump(mapNodes);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof Configuration)) return false;
+
+        Configuration that = (Configuration) o;
+
+        HashMap<String, Object> thatNodes = new HashMap<>();
+        HashMap<String, Object> thisNodes = new HashMap<>();
+
+        convertToMapNodes(that, thatNodes);
+        convertToMapNodes(this, thisNodes);
+
+        return thisNodes.equals(thatNodes) && getPath().equals(that.getPath());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        HashMap<String, Object> nodes = new HashMap<>();
+
+        convertToMapNodes(this, nodes);
+
+        return Objects.hash(nodes, getPath());
     }
 }
