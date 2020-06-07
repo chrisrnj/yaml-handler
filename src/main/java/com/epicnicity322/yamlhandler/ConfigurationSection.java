@@ -28,9 +28,8 @@ import java.util.regex.Pattern;
 
 public class ConfigurationSection
 {
-    private static final @NotNull Pattern allowedPathCharsRegex = Pattern.compile("^[A-Za-z0-9_ -]+$");
-    protected final @NotNull HashMap<String, Object> cache = new HashMap<>();
     private final @NotNull LinkedHashMap<String, Object> nodes = new LinkedHashMap<>();
+    private final @NotNull HashMap<String, Object> cache = new HashMap<>();
     private final @NotNull String name;
     private final @NotNull String path;
     private final @Nullable ConfigurationSection parent;
@@ -189,79 +188,104 @@ public class ConfigurationSection
     }
 
     /**
-     * Sets a value in the specified path. If the path has a section the value is set on the last section. If the section
-     * doesn't exist the section is automatically created. Set the value to null to delete that node or section.
+     * Sets a value in the specified path. If the path is a section path, the value is set on that section. If the section
+     * doesn't exist, the section is automatically created. If a value is already assigned to this path, the old value is
+     * replaced by the specified value. Set the value to null to delete that node or section.
      *
      * @param path  The path with sections separated by section separator char.
      * @param value The value to be assigned to this path or null to delete the path.
-     * @throws UnsupportedOperationException If a section on the path has chars that doesn't match the regex '[A-Za-z0-9_ -]'.
-     * @throws IllegalArgumentException      If the path has sections with empty chars.
+     * @return The value that was set.
      */
-    public void set(@NotNull String path, @Nullable Object value)
+    public <T> T set(@NotNull String path, @Nullable T value)
     {
-        // Start checking if path is valid and fixing the sections with unnecessary spaces.
-
         if (path == null) throw new NullPointerException();
 
-        if (!allowedPathCharsRegex.matcher(path.replace(Character.toString(sectionSeparator), "")).matches())
-            throw new UnsupportedOperationException("Unsupported chars in path.");
-
         String[] sections = sectionSeparatorPattern.split(path);
-        StringBuilder builder = new StringBuilder();
-
-        for (String key : sections) {
-            String fixedNode = key.trim();
-
-            if (fixedNode.equals(""))
-                throw new IllegalArgumentException("Path can not have sections with no chars.");
-
-            builder.append(fixedNode).append(".");
-        }
-
-        sections = sectionSeparatorPattern.split(builder.substring(0, builder.length() - 1));
-
-        // Finding the belonging section and assigning the value.
-
         ConfigurationSection section = this;
-        int i = 1;
+        int i = 0;
 
         for (String key : sections) {
-            Object result = section.nodes.get(key);
+            section.removeCaches(key);
 
-            for (String cacheKey : section.cache.keySet())
-                if (cacheKey.startsWith(key))
-                    section.cache.remove(cacheKey);
-
-            if (i++ == sections.length) {
+            if (++i == sections.length) {
                 if (value == null)
                     section.nodes.remove(key);
-                else
+                else {
                     section.nodes.put(key, value);
-            } else {
-                if (result == null) {
-                    if (value == null) {
-                        break;
-                    } else {
-                        String sectionPath;
-
-                        if (section instanceof Configuration)
-                            sectionPath = key;
-                        else
-                            sectionPath = section.getPath() + section.sectionSeparator + key;
-
-                        ConfigurationSection configurationSection = new ConfigurationSection(key, sectionPath, section,
-                                new LinkedHashMap<>(), section.sectionSeparator);
-
-                        section.nodes.put(key, configurationSection);
-                        section = configurationSection;
-                    }
-                } else if (result instanceof ConfigurationSection) {
-                    section = (ConfigurationSection) result;
-                } else {
-                    throw new IllegalStateException("Can't create new section because a node with the name '" + key +
-                            "' already exists.");
+                    section.cache.put(key, value);
                 }
-            }
+            } else
+                section = section.createSection(key);
+        }
+
+        cache.put(path, value);
+
+        return value;
+    }
+
+    /**
+     * Creates a new section or get an already existing section on the given path. If the path is a section path, the
+     * sections that do not exist are automatically created.
+     *
+     * @param path The path to create the section or get the already existing one.
+     * @return The created section.
+     */
+    public @NotNull ConfigurationSection createSection(@NotNull String path)
+    {
+        if (path == null) throw new NullPointerException();
+
+        String[] sections = sectionSeparatorPattern.split(path);
+        ConfigurationSection section = this;
+        int i = 0;
+
+        for (String key : sections) {
+            section.removeCaches(key);
+
+            if (++i == sections.length) {
+                Object result = section.get(key);
+
+                if (result instanceof ConfigurationSection)
+                    section = (ConfigurationSection) result;
+                else {
+                    String sectionPath;
+
+                    if (section instanceof Configuration)
+                        sectionPath = key;
+                    else
+                        sectionPath = section.getPath() + section.sectionSeparator + key;
+
+                    ConfigurationSection newSection = new ConfigurationSection(key, sectionPath, section,
+                            new HashMap<>(), section.sectionSeparator);
+
+                    section.nodes.put(key, newSection);
+                    section.cache.put(key, newSection);
+                    section = newSection;
+                }
+
+                // No need to break but who knows.
+                break;
+            } else
+                section = section.createSection(key);
+        }
+
+        cache.put(path, section);
+        return section;
+    }
+
+    private void removeCaches(String key)
+    {
+        // Removing all caches associated to this key.
+        for (String cacheKey : cache.keySet()) {
+            String firstKey;
+            int index = cacheKey.indexOf(sectionSeparator);
+
+            if (index == -1)
+                firstKey = cacheKey;
+            else
+                firstKey = cacheKey.substring(0, index);
+
+            if (firstKey.equals(key))
+                cache.remove(cacheKey);
         }
     }
 
@@ -441,5 +465,24 @@ public class ConfigurationSection
     public String toString()
     {
         return nodes.toString();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof ConfigurationSection)) return false;
+
+        ConfigurationSection that = (ConfigurationSection) o;
+
+        return getNodes().equals(that.getNodes()) &&
+                getPath().equals(that.getPath()) &&
+                getRoot().equals(that.getRoot());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(getNodes(), getPath(), getRoot());
     }
 }
