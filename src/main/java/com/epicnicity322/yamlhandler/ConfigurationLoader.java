@@ -19,6 +19,16 @@
 
 package com.epicnicity322.yamlhandler;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.Reader;
+import java.nio.file.Path;
+
 public interface ConfigurationLoader
 {
+    @NotNull Configuration load(@NotNull Reader reader) throws Exception;
+
+    @NotNull Configuration load(@NotNull Path path) throws Exception;
+
+    @NotNull Configuration load(@NotNull String contents) throws Exception;
 }
