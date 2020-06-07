@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.epicnicity322</groupId>
-    <artifactId>yamlwrapper</artifactId>
+    <artifactId>yamlhandler</artifactId>
     <version>1.1</version>
 
     <build>
