@@ -275,7 +275,7 @@ public class ConfigurationSection
     private void removeCaches(String key)
     {
         // Removing all caches associated to this key.
-        for (String cacheKey : cache.keySet()) {
+        cache.keySet().removeIf(cacheKey -> {
             String firstKey;
             int index = cacheKey.indexOf(sectionSeparator);
 
@@ -284,9 +284,8 @@ public class ConfigurationSection
             else
                 firstKey = cacheKey.substring(0, index);
 
-            if (firstKey.equals(key))
-                cache.remove(cacheKey);
-        }
+            return firstKey.equals(key);
+        });
     }
 
     private @Nullable Object get(@NotNull String path)
