@@ -107,7 +107,7 @@ public class Configuration extends ConfigurationSection
      *
      * @return The contents of this YAML.
      */
-    public String dump()
+    public @NotNull String dump()
     {
         LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>();
 
