@@ -38,7 +38,7 @@ public class ConfigurationSection
     private Configuration root;
 
     protected ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent,
-                                   @NotNull Map<?, ?> nodes, char sectionSeparator)
+                                   @Nullable Map<?, ?> nodes, char sectionSeparator)
     {
         this.name = name;
         this.path = path;
@@ -50,7 +50,8 @@ public class ConfigurationSection
         if (parent != null)
             root = parent.getRoot();
 
-        convertToConfigurationSectionNodes(this, nodes, this.nodes);
+        if (nodes != null)
+            convertToConfigurationSectionNodes(this, nodes, this.nodes);
     }
 
     private static void convertToConfigurationSectionNodes(ConfigurationSection input, Map<?, ?> nodes, Map<String, Object> output)
