@@ -42,20 +42,31 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * The char separating the sections.
      */
     protected final char sectionSeparator;
+
     /**
      * YAML dumper options.
      */
     private final @NotNull DumperOptions options = new DumperOptions();
+
     /**
      * YAML representer.
      */
     private final @NotNull Representer representer = new Representer();
+
     /**
      * YAML instance, holding the configuration.
      */
     protected final @NotNull Yaml yaml = new Yaml(new SafeConstructor(), representer, options);
 
-    private YamlConfigurationLoader()
+    /**
+     * Creates a {@link YamlConfigurationLoader} with default options.
+     * <p>
+     * Defaults:
+     * - Section separator char: '.'
+     * - Indent size: 4
+     * - Dumper flow style: {@link DumperOptions.FlowStyle#BLOCK}
+     */
+    public YamlConfigurationLoader()
     {
         this.sectionSeparator = '.';
 
@@ -64,11 +75,18 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     }
 
-    protected YamlConfigurationLoader(int indentSize, DumperOptions.FlowStyle flowStyle, char sectionSeparator)
+    /**
+     * Creates a {@link YamlConfigurationLoader} with specific options.
+     *
+     * @param sectionSeparator The separator char used to distinguish section breaks.
+     * @param indentSize       The amount of spaces to indent each nested node line.
+     * @param flowStyle        The flow style the YAML should have when dumped as string.
+     * @throws IllegalArgumentException If indent size is lower than 2 or greater than 9.
+     */
+    public YamlConfigurationLoader(char sectionSeparator, int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
     {
-        if (flowStyle == null) throw new NullPointerException("flowStyle is null");
-        if (indentSize < 2) throw new IllegalArgumentException("Indent must be at least 2 characters");
-        if (indentSize > 9) throw new IllegalArgumentException("Indent cannot be greater than 9 characters");
+        if (indentSize < 2) throw new IllegalArgumentException("Indent size has a minimum of 2");
+        if (indentSize > 9) throw new IllegalArgumentException("Indent size has a maximum of 9");
 
         this.sectionSeparator = sectionSeparator;
 
@@ -78,36 +96,6 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         // Set the default flow style
         options.setDefaultFlowStyle(flowStyle);
         representer.setDefaultFlowStyle(flowStyle);
-    }
-
-    /**
-     * Creates an instance of {@link YamlConfigurationLoader} with specific options.
-     *
-     * @param indentSize       The amount of spaces to indent each nested node line.
-     * @param flowStyle        The flow style the YAML should have when dumped as string.
-     * @param sectionSeparator The separator char used to distinguish section breaks.
-     * @return The {@link YamlConfigurationLoader} with these options.
-     * @throws IllegalArgumentException If indent size is lower than 2 or greater than 9.
-     * @see #build()
-     */
-    public static @NotNull YamlConfigurationLoader build(int indentSize, @NotNull DumperOptions.FlowStyle flowStyle, char sectionSeparator)
-    {
-        return new YamlConfigurationLoader(indentSize, flowStyle, sectionSeparator);
-    }
-
-    /**
-     * Creates an instance of {@link YamlConfigurationLoader} with default options.
-     * <p>
-     * Defaults:
-     * - Indent size: 4
-     * - Dumper flow style: {@link DumperOptions.FlowStyle#BLOCK}
-     * - Section separator char: '.'
-     *
-     * @return The {@link YamlConfigurationLoader} with default options.
-     */
-    public static @NotNull YamlConfigurationLoader build()
-    {
-        return new YamlConfigurationLoader();
     }
 
     /**
@@ -121,8 +109,6 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public @NotNull Configuration load(@NotNull Reader reader) throws IOException, InvalidConfigurationException
     {
-        if (reader == null) throw new NullPointerException();
-
         String data;
 
         try (BufferedReader input = new BufferedReader(reader)) {
@@ -143,15 +129,14 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public @NotNull Configuration load(@NotNull Path path) throws IOException, InvalidConfigurationException
     {
-        if (Files.isDirectory(Objects.requireNonNull(path)))
+        if (Files.isDirectory(path))
             throw new IllegalArgumentException("Given path is a directory");
 
         if (!Files.isReadable(path))
             throw new IllegalArgumentException("Given path is not readable");
 
         try {
-            return new Configuration(path.getFileName().toString(), path.toAbsolutePath().toString(), this,
-                    yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8)));
+            return new Configuration(path, yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8)), this);
         } catch (YAMLException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
@@ -167,10 +152,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public @NotNull Configuration load(@NotNull String contents) throws InvalidConfigurationException
     {
-        if (contents == null) throw new NullPointerException();
-
         try {
-            return new Configuration("", "", this, yaml.load(contents));
+            return new Configuration(null, yaml.load(contents), this);
         } catch (YAMLException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
