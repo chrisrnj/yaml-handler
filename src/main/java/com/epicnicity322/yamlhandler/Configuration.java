@@ -20,6 +20,7 @@
 package com.epicnicity322.yamlhandler;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,23 +31,28 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class Configuration extends ConfigurationSection
 {
+    private final @Nullable Path path;
     private final @NotNull YamlConfigurationLoader loader;
 
+    /**
+     * Creates a configuration holder with no nodes.
+     *
+     * @param loader The loader used to get the separation char and {@link org.yaml.snakeyaml.DumperOptions}.
+     */
     public Configuration(@NotNull YamlConfigurationLoader loader)
     {
-        super("", "", null, new LinkedHashMap<>(), Objects.requireNonNull(loader).sectionSeparator);
-
-        this.loader = loader;
+        this(null, new LinkedHashMap<>(), loader);
     }
 
-    protected Configuration(@NotNull String name, @NotNull String path, @NotNull YamlConfigurationLoader loader,
-                            @NotNull Map<?, ?> nodes)
+    protected Configuration(@Nullable Path path, @NotNull Map<?, ?> nodes, @NotNull YamlConfigurationLoader loader)
     {
-        super(name, path, null, nodes, loader.sectionSeparator);
+        super("", "", null, nodes, loader.sectionSeparator);
 
+        this.path = path;
         this.loader = loader;
     }
 
@@ -74,6 +80,17 @@ public class Configuration extends ConfigurationSection
     }
 
     /**
+     * Gets the file holding this configuration. If this configuration was not loaded by a file the {@link Optional} is
+     * empty.
+     *
+     * @return The path of the file holding this configuration.
+     */
+    public @NotNull Optional<Path> getFilePath()
+    {
+        return Optional.ofNullable(path);
+    }
+
+    /**
      * Save the configuration to the specified path. If the path or the parent path does not exist it will be created
      * automatically. If the path already exists, the configuration data will be appended to the end of this file.
      *
@@ -83,14 +100,14 @@ public class Configuration extends ConfigurationSection
      */
     public void save(@NotNull Path path) throws IOException
     {
-        // Check if the path is pointing to a existing directory
-        if (Files.isDirectory(Objects.requireNonNull(path, "path is null")))
+        // Check if the path is pointing to an existing directory
+        if (Files.isDirectory(path))
             throw new IllegalArgumentException("Given path is a directory");
 
         // Create the parent directories if they don't exist
         Path parent = path.getParent();
 
-        // If "path" parameter does not have a parent then "parent" variable will be null.
+        // If the given path does not have a parent then "parent" variable will be null.
         if (parent != null && Files.notExists(parent))
             Files.createDirectories(parent);
 
@@ -115,6 +132,11 @@ public class Configuration extends ConfigurationSection
         return loader.yaml.dump(mapNodes);
     }
 
+    /**
+     * Checks if the specified object is a {@link Configuration} with the same nodes and the same path.
+     *
+     * @param o The object to compare.
+     */
     @Override
     public boolean equals(Object o)
     {
@@ -129,7 +151,7 @@ public class Configuration extends ConfigurationSection
         convertToMapNodes(that, thatNodes);
         convertToMapNodes(this, thisNodes);
 
-        return thisNodes.equals(thatNodes) && getPath().equals(that.getPath());
+        return thisNodes.equals(thatNodes) && Objects.equals(path, that.path);
     }
 
     @Override
@@ -139,6 +161,6 @@ public class Configuration extends ConfigurationSection
 
         convertToMapNodes(this, nodes);
 
-        return Objects.hash(nodes, getPath());
+        return Objects.hash(nodes, getFilePath());
     }
 }
