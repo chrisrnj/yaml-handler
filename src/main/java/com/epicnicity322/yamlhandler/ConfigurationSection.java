@@ -22,7 +22,14 @@ package com.epicnicity322.yamlhandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -97,10 +104,10 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets the name of this configuration section. If this is the root section the name of the configuration file is
-     * returned, if the configuration was loaded by a reader an empty string is returned.
+     * Gets the name of this configuration section. If this is the root section the path is an empty string.
      *
      * @return The name of this section.
+     * @see Configuration#getFilePath()
      */
     public @NotNull String getName()
     {
@@ -108,10 +115,10 @@ public class ConfigurationSection
     }
 
     /**
-     * The path of this configuration section. If this is the root section the path of the configuration file is
-     * returned, if the configuration was loaded by a reader an empty string is returned.
+     * The path of this configuration section. If this is the root section the path is an empty string.
      *
      * @return The path to this section with its name included.
+     * @see Configuration#getFilePath()
      */
     public @NotNull String getPath()
     {
@@ -129,9 +136,9 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets the root Configuration containing this configuration section and all other siblings.
+     * Gets the root {@link Configuration} containing this configuration section and all other siblings.
      *
-     * @return The root Configuration.
+     * @return The root {@link Configuration}.
      */
     public @NotNull Configuration getRoot()
     {
@@ -199,8 +206,6 @@ public class ConfigurationSection
      */
     public <T> T set(@NotNull String path, @Nullable T value)
     {
-        if (path == null) throw new NullPointerException();
-
         String[] sections = sectionSeparatorPattern.split(path);
         ConfigurationSection section = this;
         int i = 0;
@@ -233,8 +238,6 @@ public class ConfigurationSection
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path)
     {
-        if (path == null) throw new NullPointerException();
-
         String[] sections = sectionSeparatorPattern.split(path);
         ConfigurationSection section = this;
         int i = 0;
@@ -291,7 +294,7 @@ public class ConfigurationSection
 
     private @Nullable Object get(@NotNull String path)
     {
-        if (cache.containsKey(Objects.requireNonNull(path)))
+        if (cache.containsKey(path))
             return cache.get(path);
 
         String[] sections = sectionSeparatorPattern.split(path);
@@ -475,14 +478,14 @@ public class ConfigurationSection
 
         ConfigurationSection that = (ConfigurationSection) o;
 
-        return getNodes().equals(that.getNodes()) &&
-                getPath().equals(that.getPath()) &&
-                getRoot().equals(that.getRoot());
+        return nodes.equals(that.nodes) &&
+                path.equals(that.path) &&
+                root.equals(that.root);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getNodes(), getPath(), getRoot());
+        return Objects.hash(nodes, path, root);
     }
 }
