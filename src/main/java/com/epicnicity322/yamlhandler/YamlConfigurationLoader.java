@@ -22,6 +22,7 @@ package com.epicnicity322.yamlhandler;
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -51,12 +52,12 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     /**
      * YAML representer.
      */
-    private final @NotNull Representer representer = new Representer();
+    private final @NotNull Representer representer = new Representer(options);
 
     /**
      * YAML instance, holding the configuration.
      */
-    protected final @NotNull Yaml yaml = new Yaml(new SafeConstructor(), representer, options);
+    protected final @NotNull Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()), representer, options);
 
     /**
      * Creates a {@link YamlConfigurationLoader} with default options.
