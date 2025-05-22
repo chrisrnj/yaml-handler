@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Christiano Rangel
+ * Copyright (c) 2020-2025 Christiano Rangel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@ package com.epicnicity322.yamlhandler;
 
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -64,14 +65,14 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * <p>
      * Defaults:
      * - Section separator char: '.'
-     * - Indent size: 4
+     * - Indent size: 2
      * - Dumper flow style: {@link DumperOptions.FlowStyle#BLOCK}
      */
     public YamlConfigurationLoader()
     {
         this.sectionSeparator = '.';
 
-        options.setIndent(4);
+        options.setIndent(2);
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     }
@@ -82,13 +83,9 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * @param sectionSeparator The separator char used to distinguish section breaks.
      * @param indentSize       The amount of spaces to indent each nested node line.
      * @param flowStyle        The flow style the YAML should have when dumped as string.
-     * @throws IllegalArgumentException If indent size is lower than 2 or greater than 9.
      */
-    public YamlConfigurationLoader(char sectionSeparator, int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
+    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
     {
-        if (indentSize < 2) throw new IllegalArgumentException("Indent size has a minimum of 2");
-        if (indentSize > 9) throw new IllegalArgumentException("Indent size has a maximum of 9");
-
         this.sectionSeparator = sectionSeparator;
 
         // Set the indent size
@@ -106,7 +103,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * @return The loaded configuration.
      * @throws IOException                   If failed to read from this reader.
      * @throws InvalidConfigurationException If something went wrong while parsing the reader data as yaml.
-     * @see #load(Path path)
+     * @see #load(Path)
      */
     public @NotNull Configuration load(@NotNull Reader reader) throws IOException, InvalidConfigurationException
     {
