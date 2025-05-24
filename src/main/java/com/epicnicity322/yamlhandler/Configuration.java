@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Christiano Rangel
+ * Copyright (c) 2020-2025 Christiano Rangel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToMapNodes;
+
 public class Configuration extends ConfigurationSection
 {
     private final @Nullable Path path;
@@ -56,23 +58,6 @@ public class Configuration extends ConfigurationSection
         this.loader = loader;
     }
 
-    private static void convertToMapNodes(ConfigurationSection input, Map<String, Object> output)
-    {
-        for (Map.Entry<String, Object> entry : input.getNodes().entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            if (value instanceof ConfigurationSection) {
-                LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-
-                convertToMapNodes((ConfigurationSection) value, map);
-                value = map;
-            }
-
-            output.put(key, value);
-        }
-    }
-
     @Override
     public @NotNull Configuration getRoot()
     {
@@ -80,7 +65,7 @@ public class Configuration extends ConfigurationSection
     }
 
     /**
-     * Gets the file holding this configuration. If this configuration was not loaded by a file the {@link Optional} is
+     * Gets the file holding this configuration. If this configuration was not loaded by a file, the {@link Optional} is
      * empty.
      *
      * @return The path of the file holding this configuration.
@@ -91,36 +76,34 @@ public class Configuration extends ConfigurationSection
     }
 
     /**
-     * Save the configuration to the specified path. If the path or the parent path does not exist it will be created
-     * automatically. If the path already exists, the configuration data will be appended to the end of this file.
+     * Save the configuration to the specified path. If the path or the parent directory does not exist, it will be
+     * created automatically. If the path already exists, the configuration data will be appended to the end of the
+     * file.
      *
      * @param path Path of the file to save the configuration in.
      * @throws IOException              If failed to save the configuration to the given path.
-     * @throws IllegalArgumentException If the path is pointing to a directory.
+     * @throws IllegalArgumentException If the path is pointing to an existing directory.
      */
     public void save(@NotNull Path path) throws IOException
     {
         // Check if the path is pointing to an existing directory
-        if (Files.isDirectory(path))
-            throw new IllegalArgumentException("Given path is a directory");
+        if (Files.isDirectory(path)) throw new IllegalArgumentException("Given path is a directory");
 
         // Create the parent directories if they don't exist
         Path parent = path.getParent();
 
         // If the given path does not have a parent then "parent" variable will be null.
-        if (parent != null && Files.notExists(parent))
-            Files.createDirectories(parent);
+        if (parent != null && Files.notExists(parent)) Files.createDirectories(parent);
 
         // Create the path if it doesn't exist
-        if (Files.notExists(path))
-            Files.createFile(path);
+        if (Files.notExists(path)) Files.createFile(path);
 
         // Append the data to the path
         Files.write(path, dump().getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
     }
 
     /**
-     * Serializes the nodes and sections to a readable YAML text.
+     * Serializes the nodes and sections to readable YAML text.
      *
      * @return The contents of this YAML.
      */
