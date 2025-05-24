@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Christiano Rangel
+ * Copyright (c) 2020-2025 Christiano Rangel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,76 +31,30 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 public class ConfigurationSection
 {
     private final @NotNull LinkedHashMap<String, Object> nodes = new LinkedHashMap<>();
+    private final @NotNull Map<String, Object> unmodifiableNodes = Collections.unmodifiableMap(nodes);
     private final @NotNull HashMap<String, Object> cache = new HashMap<>();
     private final @NotNull String name;
     private final @NotNull String path;
     private final @Nullable ConfigurationSection parent;
-    private final @NotNull Pattern sectionSeparatorPattern;
+    private final Configuration root;
     private final char sectionSeparator;
-    private Configuration root;
 
-    protected ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent,
-                                   @Nullable Map<?, ?> nodes, char sectionSeparator)
+    protected ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, char sectionSeparator)
     {
         this.name = name;
         this.path = path;
         this.parent = parent;
         this.sectionSeparator = sectionSeparator;
-        sectionSeparatorPattern = Pattern.compile(Pattern.quote(Character.toString(sectionSeparator)));
 
         // Parent can only be null if this is constructed by the root.
-        if (parent != null)
-            root = parent.getRoot();
+        this.root = parent == null ? null : parent.getRoot();
 
         if (nodes != null)
-            convertToConfigurationSectionNodes(this, nodes, this.nodes);
-    }
-
-    private static void convertToConfigurationSectionNodes(ConfigurationSection input, Map<?, ?> nodes, Map<String, Object> output)
-    {
-        for (Map.Entry<?, ?> entry : nodes.entrySet()) {
-            String key = entry.getKey().toString();
-            Object value = entry.getValue();
-
-            if (value instanceof Map) {
-                String path;
-
-                if (input instanceof Configuration)
-                    path = key;
-                else
-                    path = input.getPath() + input.sectionSeparator + key;
-
-                value = new ConfigurationSection(key, path, input, (Map<?, ?>) value, input.sectionSeparator);
-            }
-
-            output.put(key, value);
-        }
-    }
-
-    private static void getAbsoluteNodes(ConfigurationSection input, Map<String, Object> output)
-    {
-        for (Map.Entry<String, Object> entry : input.nodes.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            if (value instanceof ConfigurationSection) {
-                getAbsoluteNodes((ConfigurationSection) value, output);
-            } else {
-                String path;
-
-                if (input instanceof Configuration)
-                    path = key;
-                else
-                    path = input.getPath() + input.sectionSeparator + key;
-
-                output.put(path, value);
-            }
-        }
+            YamlHandlerUtil.convertToConfigurationSectionNodes(sectionSeparator, this, nodes, this.nodes);
     }
 
     /**
@@ -165,7 +119,7 @@ public class ConfigurationSection
     {
         LinkedHashMap<String, Object> output = new LinkedHashMap<>();
 
-        getAbsoluteNodes(this, output);
+        YamlHandlerUtil.getAbsoluteNodes(sectionSeparator, this, output);
 
         return output;
     }
@@ -178,7 +132,7 @@ public class ConfigurationSection
      */
     public @NotNull Map<String, Object> getNodes()
     {
-        return Collections.unmodifiableMap(nodes);
+        return unmodifiableNodes;
     }
 
     /**
@@ -206,7 +160,7 @@ public class ConfigurationSection
      */
     public <T> T set(@NotNull String path, @Nullable T value)
     {
-        String[] sections = sectionSeparatorPattern.split(path);
+        String[] sections = path.split(Character.toString(sectionSeparator));
         ConfigurationSection section = this;
         int i = 0;
 
@@ -214,14 +168,12 @@ public class ConfigurationSection
             section.removeCaches(key);
 
             if (++i == sections.length) {
-                if (value == null)
-                    section.nodes.remove(key);
+                if (value == null) section.nodes.remove(key);
                 else {
                     section.nodes.put(key, value);
                     section.cache.put(key, value);
                 }
-            } else
-                section = section.createSection(key);
+            } else section = section.createSection(key);
         }
 
         cache.put(path, value);
@@ -238,7 +190,7 @@ public class ConfigurationSection
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path)
     {
-        String[] sections = sectionSeparatorPattern.split(path);
+        String[] sections = path.split(Character.toString(sectionSeparator));
         ConfigurationSection section = this;
         int i = 0;
 
@@ -248,18 +200,14 @@ public class ConfigurationSection
             if (++i == sections.length) {
                 Object result = section.get(key);
 
-                if (result instanceof ConfigurationSection)
-                    section = (ConfigurationSection) result;
+                if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
                 else {
                     String sectionPath;
 
-                    if (section instanceof Configuration)
-                        sectionPath = key;
-                    else
-                        sectionPath = section.getPath() + section.sectionSeparator + key;
+                    if (section instanceof Configuration) sectionPath = key;
+                    else sectionPath = section.getPath() + section.sectionSeparator + key;
 
-                    ConfigurationSection newSection = new ConfigurationSection(key, sectionPath, section,
-                            new HashMap<>(), section.sectionSeparator);
+                    ConfigurationSection newSection = new ConfigurationSection(key, sectionPath, section, new HashMap<>(), section.sectionSeparator);
 
                     section.nodes.put(key, newSection);
                     section.cache.put(key, newSection);
@@ -268,8 +216,7 @@ public class ConfigurationSection
 
                 // No need to break but who knows.
                 break;
-            } else
-                section = section.createSection(key);
+            } else section = section.createSection(key);
         }
 
         cache.put(path, section);
@@ -283,10 +230,8 @@ public class ConfigurationSection
             String firstKey;
             int index = cacheKey.indexOf(sectionSeparator);
 
-            if (index == -1)
-                firstKey = cacheKey;
-            else
-                firstKey = cacheKey.substring(0, index);
+            if (index == -1) firstKey = cacheKey;
+            else firstKey = cacheKey.substring(0, index);
 
             return firstKey.equals(key);
         });
@@ -294,10 +239,9 @@ public class ConfigurationSection
 
     private @Nullable Object get(@NotNull String path)
     {
-        if (cache.containsKey(path))
-            return cache.get(path);
+        if (cache.containsKey(path)) return cache.get(path);
 
-        String[] sections = sectionSeparatorPattern.split(path);
+        String[] sections = path.split(Character.toString(sectionSeparator));
         ConfigurationSection section = this;
         int i = 1;
 
@@ -307,14 +251,12 @@ public class ConfigurationSection
             // Returning the result if this is the last key.
             if (i++ == sections.length) {
                 // Add result to cache to improve performance.
-                if (result != null)
-                    cache.put(path, result);
+                if (result != null) cache.put(path, result);
 
                 return result;
             }
 
-            if (result instanceof ConfigurationSection)
-                section = (ConfigurationSection) result;
+            if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
         }
 
         // Fun fact: since the loop returns something when the last element is iterated, the code will never reach this.
@@ -332,8 +274,7 @@ public class ConfigurationSection
         Object value = get(path);
         Boolean result = null;
 
-        if (value instanceof Boolean)
-            result = Boolean.TRUE.equals(value);
+        if (value instanceof Boolean) result = Boolean.TRUE.equals(value);
 
         return Optional.ofNullable(result);
     }
@@ -349,8 +290,7 @@ public class ConfigurationSection
         Object value = get(path);
         Character result = null;
 
-        if (value instanceof Character)
-            result = (Character) value;
+        if (value instanceof Character) result = (Character) value;
 
         return Optional.ofNullable(result);
     }
@@ -366,10 +306,8 @@ public class ConfigurationSection
         Object value = get(path);
         Collection<?> result;
 
-        if (value instanceof Collection)
-            result = (Collection<?>) value;
-        else
-            result = new ArrayList<>();
+        if (value instanceof Collection) result = (Collection<?>) value;
+        else result = new ArrayList<>();
 
         return result;
     }
@@ -387,9 +325,8 @@ public class ConfigurationSection
         Object value = get(path);
         ArrayList<T> result = new ArrayList<>();
 
-        if (value instanceof Collection)
-            for (Object object : (Collection<?>) value)
-                result.add(transformer.apply(object));
+        if (value instanceof Collection) for (Object object : (Collection<?>) value)
+            result.add(transformer.apply(object));
 
         return result;
     }
@@ -405,8 +342,7 @@ public class ConfigurationSection
         Object value = get(path);
         ConfigurationSection result = null;
 
-        if (value instanceof ConfigurationSection)
-            result = (ConfigurationSection) value;
+        if (value instanceof ConfigurationSection) result = (ConfigurationSection) value;
 
         return result;
     }
@@ -422,8 +358,7 @@ public class ConfigurationSection
         Object value = get(path);
         Number result = null;
 
-        if (value instanceof Number)
-            result = (Number) value;
+        if (value instanceof Number) result = (Number) value;
 
         return Optional.ofNullable(result);
     }
@@ -453,8 +388,7 @@ public class ConfigurationSection
         Object value = get(path);
         String result = null;
 
-        if (value instanceof CharSequence)
-            result = value.toString();
+        if (value instanceof CharSequence) result = value.toString();
 
         return Optional.ofNullable(result);
     }
@@ -478,9 +412,7 @@ public class ConfigurationSection
 
         ConfigurationSection that = (ConfigurationSection) o;
 
-        return nodes.equals(that.nodes) &&
-                path.equals(that.path) &&
-                root.equals(that.root);
+        return nodes.equals(that.nodes) && path.equals(that.path) && Objects.equals(root, that.root);
     }
 
     @Override
