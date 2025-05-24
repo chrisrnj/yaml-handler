@@ -127,11 +127,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public @NotNull Configuration load(@NotNull Path path) throws IOException, InvalidConfigurationException
     {
-        if (Files.isDirectory(path))
-            throw new IllegalArgumentException("Given path is a directory");
-
-        if (!Files.isReadable(path))
-            throw new IllegalArgumentException("Given path is not readable");
+        if (Files.isDirectory(path)) throw new IllegalArgumentException("Given path is a directory");
+        if (!Files.isReadable(path)) throw new IllegalArgumentException("Given path is not readable");
 
         try {
             return new Configuration(path, yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8)), this);
@@ -167,9 +164,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         YamlConfigurationLoader that = (YamlConfigurationLoader) o;
 
-        return sectionSeparator == that.sectionSeparator &&
-                options.getIndent() == that.options.getIndent() &&
-                options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle();
+        return sectionSeparator == that.sectionSeparator && options.getIndent() == that.options.getIndent() && options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle();
     }
 
     @Override

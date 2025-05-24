@@ -33,10 +33,8 @@ class YamlHandlerUtil
             if (value instanceof Map) {
                 String path;
 
-                if (input instanceof Configuration)
-                    path = key;
-                else
-                    path = input.getPath() + sectionSeparator + key;
+                if (input instanceof Configuration) path = key;
+                else path = input.getPath() + sectionSeparator + key;
 
                 value = new ConfigurationSection(key, path, input, (Map<?, ?>) value, sectionSeparator);
             }
@@ -56,10 +54,8 @@ class YamlHandlerUtil
             } else {
                 String path;
 
-                if (input instanceof Configuration)
-                    path = key;
-                else
-                    path = input.getPath() + sectionSeparator + key;
+                if (input instanceof Configuration) path = key;
+                else path = input.getPath() + sectionSeparator + key;
 
                 output.put(path, value);
             }
