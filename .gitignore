@@ -1,2 +1,6 @@
-/.idea/
-/target/
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+.idea/
+*.iml
+*.ini
