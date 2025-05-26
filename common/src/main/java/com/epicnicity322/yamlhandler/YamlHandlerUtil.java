@@ -24,7 +24,7 @@ import java.util.Map;
 
 class YamlHandlerUtil
 {
-    static void convertToConfigurationSectionNodes(char sectionSeparator, ConfigurationSection input, Map<?, ?> nodes, Map<String, Object> output)
+    static void convertToConfigurationSectionNodes(ConfigurationSection input, Map<?, ?> nodes, Map<String, Object> output)
     {
         for (Map.Entry<?, ?> entry : nodes.entrySet()) {
             String key = entry.getKey().toString();
@@ -34,28 +34,34 @@ class YamlHandlerUtil
                 String path;
 
                 if (input instanceof Configuration) path = key;
-                else path = input.getPath() + sectionSeparator + key;
+                else path = input.getPath() + input.getSectionSeparator() + key;
 
-                value = new ConfigurationSection(key, path, input, (Map<?, ?>) value, sectionSeparator);
+                value = new ConfigurationSection(key, path, input, (Map<?, ?>) value, input.getSectionSeparator());
             }
 
             output.put(key, value);
         }
     }
 
-    static void getAbsoluteNodes(char sectionSeparator, ConfigurationSection input, Map<String, Object> output)
+    static void getAbsoluteNodes(ConfigurationSection input, Map<String, Object> output)
     {
-        for (Map.Entry<String, Object> entry : input.getNodes().entrySet()) {
+        Map<String, Object> nodes = input.getNodes();
+        if (nodes.isEmpty()) {
+            output.put(input.getPath(), input);
+            return;
+        }
+
+        for (Map.Entry<String, Object> entry : nodes.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
             if (value instanceof ConfigurationSection) {
-                getAbsoluteNodes(sectionSeparator, (ConfigurationSection) value, output);
+                getAbsoluteNodes((ConfigurationSection) value, output);
             } else {
                 String path;
 
                 if (input instanceof Configuration) path = key;
-                else path = input.getPath() + sectionSeparator + key;
+                else path = input.getPath() + input.getSectionSeparator() + key;
 
                 output.put(path, value);
             }
