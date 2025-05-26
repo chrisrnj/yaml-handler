@@ -21,6 +21,7 @@ package com.epicnicity322.yamlhandler;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringTokenizer;
 import java.util.function.Function;
 
 public class ConfigurationSection
@@ -43,18 +45,21 @@ public class ConfigurationSection
     private final Configuration root;
     private final char sectionSeparator;
 
-    protected ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, char sectionSeparator)
+    ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, char sectionSeparator)
     {
+        // Parent can only be null if this is constructed by the root.
+        if (parent == null) {
+            if (!(this instanceof Configuration))
+                throw new IllegalArgumentException("Parent can not be null unless this is a root section.");
+            this.root = null;
+        } else this.root = parent.getRoot();
+
         this.name = name;
         this.path = path;
         this.parent = parent;
         this.sectionSeparator = sectionSeparator;
 
-        // Parent can only be null if this is constructed by the root.
-        this.root = parent == null ? null : parent.getRoot();
-
-        if (nodes != null)
-            YamlHandlerUtil.convertToConfigurationSectionNodes(sectionSeparator, this, nodes, this.nodes);
+        if (nodes != null) YamlHandlerUtil.convertToConfigurationSectionNodes(this, nodes, this.nodes);
     }
 
     /**
@@ -104,7 +109,7 @@ public class ConfigurationSection
      *
      * @return The section separation char.
      */
-    public char getSectionSeparator()
+    public final char getSectionSeparator()
     {
         return sectionSeparator;
     }
@@ -119,7 +124,7 @@ public class ConfigurationSection
     {
         LinkedHashMap<String, Object> output = new LinkedHashMap<>();
 
-        YamlHandlerUtil.getAbsoluteNodes(sectionSeparator, this, output);
+        YamlHandlerUtil.getAbsoluteNodes(this, output);
 
         return output;
     }
@@ -130,6 +135,7 @@ public class ConfigurationSection
      *
      * @return An unmodifiable map with the nodes of this section.
      */
+    @UnmodifiableView
     public @NotNull Map<String, Object> getNodes()
     {
         return unmodifiableNodes;
@@ -160,23 +166,23 @@ public class ConfigurationSection
      */
     public <T> T set(@NotNull String path, @Nullable T value)
     {
-        String[] sections = path.split(Character.toString(sectionSeparator));
-        ConfigurationSection section = this;
-        int i = 0;
+        StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
+        ConfigurationSection current = this;
 
-        for (String key : sections) {
-            section.removeCaches(key);
+        while (tokens.hasMoreTokens()) {
+            String part = tokens.nextToken();
 
-            if (++i == sections.length) {
-                if (value == null) section.nodes.remove(key);
+            if (tokens.hasMoreTokens()) {
+                current = current.createSection(part);
+            } else {
+                current.removeCaches(part);
+                if (value == null) current.nodes.remove(part);
                 else {
-                    section.nodes.put(key, value);
-                    section.cache.put(key, value);
+                    current.nodes.put(part, value);
+                    current.cache.put(part, value);
                 }
-            } else section = section.createSection(key);
+            }
         }
-
-        cache.put(path, value);
 
         return value;
     }
@@ -190,37 +196,28 @@ public class ConfigurationSection
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path)
     {
-        String[] sections = path.split(Character.toString(sectionSeparator));
-        ConfigurationSection section = this;
-        int i = 0;
+        StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
+        StringBuilder absolutePath = new StringBuilder(this.path);
+        ConfigurationSection current = this;
 
-        for (String key : sections) {
-            section.removeCaches(key);
+        while (tokens.hasMoreTokens()) {
+            String part = tokens.nextToken();
 
-            if (++i == sections.length) {
-                Object result = section.get(key);
+            if (!(current.nodes.get(part) instanceof ConfigurationSection)) {
+                if (absolutePath.length() > 0) absolutePath.append(sectionSeparator);
+                absolutePath.append(part);
 
-                if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
-                else {
-                    String sectionPath;
+                ConfigurationSection newSection = new ConfigurationSection(part, absolutePath.toString(), current, Collections.emptyMap(), sectionSeparator);
 
-                    if (section instanceof Configuration) sectionPath = key;
-                    else sectionPath = section.getPath() + section.sectionSeparator + key;
+                current.removeCaches(part);
+                current.nodes.put(part, newSection);
+                current.cache.put(part, newSection);
+            }
 
-                    ConfigurationSection newSection = new ConfigurationSection(key, sectionPath, section, new HashMap<>(), section.sectionSeparator);
-
-                    section.nodes.put(key, newSection);
-                    section.cache.put(key, newSection);
-                    section = newSection;
-                }
-
-                // No need to break but who knows.
-                break;
-            } else section = section.createSection(key);
+            current = (ConfigurationSection) current.nodes.get(part);
         }
 
-        cache.put(path, section);
-        return section;
+        return current;
     }
 
     private void removeCaches(String key)
@@ -237,29 +234,27 @@ public class ConfigurationSection
         });
     }
 
-    private @Nullable Object get(@NotNull String path)
+    protected @Nullable Object get(@NotNull String path)
     {
-        if (cache.containsKey(path)) return cache.get(path);
+        Object cached = cache.get(path);
+        if (cached != null) return cached;
 
-        String[] sections = path.split(Character.toString(sectionSeparator));
+        StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
         ConfigurationSection section = this;
-        int i = 1;
 
-        for (String key : sections) {
+        while (tokens.hasMoreTokens()) {
+            String key = tokens.nextToken();
             Object result = section.nodes.get(key);
 
-            // Returning the result if this is the last key.
-            if (i++ == sections.length) {
-                // Add result to cache to improve performance.
+            if (tokens.hasMoreTokens()) {
+                if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
+                else return null; // Intermediate node not a section
+            } else {
                 if (result != null) cache.put(path, result);
-
                 return result;
             }
-
-            if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
         }
 
-        // Fun fact: since the loop returns something when the last element is iterated, the code will never reach this.
         return null;
     }
 
