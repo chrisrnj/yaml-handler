@@ -97,20 +97,36 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     protected final @NotNull Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()), representer, options);
 
     /**
-     * Creates a {@link YamlConfigurationLoader} with default options.
+     * The defined serializers for specific types of classes.
+     */
+    private final @NotNull CustomSerializer<?>[] customSerializers;
+
+    /**
+     * Constructs a loader with the <a href="#default-configuration">default options</a>.
      * <p>
-     * Defaults:
-     * - Section separator char: '.'
-     * - Indent size: 2
-     * - Dumper flow style: {@link DumperOptions.FlowStyle#BLOCK}
+     * Equivalent to invoking {@link #YamlConfigurationLoader(char, int, org.yaml.snakeyaml.DumperOptions.FlowStyle)
+     * YamlConfigurationLoader('.', 2, FlowStyle.BLOCK)}.
+     *
+     * @since 1.0
      */
     public YamlConfigurationLoader()
     {
-        this.sectionSeparator = '.';
+        this(new CustomSerializer[0]);
+    }
 
-        options.setIndent(2);
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        representer.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+    /**
+     * Constructs a loader with the default formatting options and a set of <em>custom</em> serializers.
+     * <p>
+     * Useful when you want to load configurations containing bespoke object graphs but are satisfied with the standard
+     * separator, indent, and flow style.
+     *
+     * @param customSerializers one or more serializers to register
+     * @throws NullPointerException if {@code customSerializers} is {@code null}
+     * @since 1.5
+     */
+    public YamlConfigurationLoader(@NotNull CustomSerializer<?>... customSerializers)
+    {
+        this('.', 2, DumperOptions.FlowStyle.BLOCK, customSerializers);
     }
 
     /**
@@ -127,6 +143,28 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
     {
+        this(sectionSeparator, indentSize, flowStyle, new CustomSerializer[0]);
+    }
+
+    /**
+     * Constructs a loader with caller-supplied formatting options <em>and</em> an explicit registry of custom
+     * serializers.
+     *
+     * @param sectionSeparator  the character used to denote section boundaries
+     *                          inside compound keys
+     * @param indentSize        number of spaces to indent nested YAML nodes;
+     *                          must be between 1 and 10 inclusive
+     * @param flowStyle         the default flow style to apply when dumping YAML
+     * @param customSerializers an array of serializers keyed by their
+     *                          {@link CustomSerializer#type() handled type};
+     * @throws IllegalArgumentException if {@code indentSize} is outside the 1-10 range
+     * @throws NullPointerException     if {@code flowStyle} or
+     *                                  {@code customSerializers} is {@code null}
+     * @since 1.5
+     */
+    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle, @NotNull CustomSerializer<?> @NotNull ... customSerializers)
+    {
+        this.customSerializers = Arrays.copyOf(customSerializers, customSerializers.length);
         this.sectionSeparator = sectionSeparator;
 
         // Set the indent size
@@ -195,6 +233,17 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         } catch (ClassCastException e) {
             throw new InvalidConfigurationException("Top level is not a Map.");
         }
+    }
+
+    @Override
+    public @Nullable <T> CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type)
+    {
+        for (CustomSerializer<?> customSerializer : customSerializers) {
+            if (customSerializer != null && customSerializer.type().isAssignableFrom(type))
+                //noinspection unchecked
+                return (CustomSerializer<T>) customSerializer;
+        }
+        return null;
     }
 
     @Override

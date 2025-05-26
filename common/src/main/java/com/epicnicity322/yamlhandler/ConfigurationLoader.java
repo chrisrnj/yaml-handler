@@ -19,7 +19,9 @@
 
 package com.epicnicity322.yamlhandler;
 
+import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Reader;
 import java.nio.file.Path;
@@ -32,38 +34,38 @@ public interface ConfigurationLoader
 
     @NotNull Configuration load(@NotNull String contents) throws Exception;
 
-//    /**
-//     * Returns the {@link CustomSerializer} that has been registered for the given type, or {@code null} if no
-//     * serializer has been registered.
-//     * <p>
-//     * Custom serializers enable the {@code ConfigurationLoader} to marshal and unmarshal complex objects that
-//     * configurations cannot represent natively. Registration is typically performed through the loader’s builder or a
-//     * configuration module; consult your loader implementation for details.
-//     *
-//     * <h2>Type Compatibility</h2>
-//     * The returned serializer is guaranteed to be compatible with the provided {@code type}. Specifically, the
-//     * serializer’s {@link CustomSerializer#type()} will satisfy {@code serializer.type().isAssignableFrom(type)}.
-//     *
-//     * <h2>Usage example</h2>
-//     * <pre>{@code
-//     * ConfigurationLoader loader = ...;
-//     *
-//     * CustomSerializer<MyPojo> serializer =
-//     *         loader.getCustomSerializer(MyPojo.class);
-//     *
-//     * if (serializer != null) {
-//     *     Map<String, Object> data = serializer.serialize(myPojo);
-//     *     // persist data in a ConfigurationSection ...
-//     * }
-//     * }</pre>
-//     *
-//     * <h2>Thread safety</h2>
-//     * Implementations are expected to return stateless, reusable serializer instances.
-//     * If a serializer maintains internal state, it must guarantee its own thread safety.
-//     *
-//     * @param <T>  the type handled by the serializer
-//     * @param type the class literal representing {@code T}; must not be {@code null}
-//     * @return the registered serializer for {@code type}, or {@code null} if none is present
-//     */
-//    <T> @Nullable CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type);
+    /**
+     * Returns the {@link CustomSerializer} that has been registered for the given type, or {@code null} if no
+     * serializer has been registered.
+     * <p>
+     * Custom serializers enable the {@code ConfigurationLoader} to marshal and unmarshal complex objects that
+     * configurations cannot represent natively. Registration is typically performed through the loader’s builder or a
+     * configuration module; consult your loader implementation for details.
+     *
+     * <h2>Type Compatibility</h2>
+     * The returned serializer is guaranteed to be compatible with the provided {@code type}. Specifically, the
+     * serializer’s {@link CustomSerializer#type()} will satisfy {@code serializer.type().isAssignableFrom(type)}.
+     *
+     * <h2>Usage example</h2>
+     * <pre>{@code
+     * ConfigurationLoader loader = ...;
+     *
+     * CustomSerializer<MyPojo> serializer =
+     *         loader.getCustomSerializer(MyPojo.class);
+     *
+     * if (serializer != null) {
+     *     Map<String, Object> data = serializer.serialize(myPojo);
+     *     // persist data in a ConfigurationSection ...
+     * }
+     * }</pre>
+     *
+     * <h2>Thread safety</h2>
+     * Implementations are expected to return stateless, reusable serializer instances.
+     * If a serializer maintains internal state, it must guarantee its own thread safety.
+     *
+     * @param <T>  the type handled by the serializer
+     * @param type the class literal representing {@code T}; must not be {@code null}
+     * @return the registered serializer for {@code type}, or {@code null} if none is present
+     */
+    <T> @Nullable CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type);
 }
