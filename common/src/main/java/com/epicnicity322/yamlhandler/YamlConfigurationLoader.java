@@ -20,7 +20,9 @@
 package com.epicnicity322.yamlhandler;
 
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
+import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -35,9 +37,43 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Loads YAML configuration sources into {@link Configuration} instances.
+ * <p>
+ * This loader wraps <a href="https://bitbucket.org/snakeyaml/snakeyaml">SnakeYAML</a>, pre-configuring
+ * {@link org.yaml.snakeyaml.DumperOptions} and {@link org.yaml.snakeyaml.representer.Representer} with sensible
+ * defaults while exposing a small surface for customization.
+ *
+ * <h2>Features</h2>
+ * <ul>
+ *   <li><strong>Section navigation</strong> – Hierarchical keys are delimited by a configurable
+ *   <em>section separator</em> (default: {@code '.'}).</li>
+ *   <li><strong>Pluggable serializers</strong> – Register one or more {@linkplain CustomSerializer custom serializers}
+ *   to marshal types that YAML cannot represent directly.</li>
+ *   <li><strong>Indent &amp; flow‐style control</strong> – Tune aesthetics with an indent range of 1-10 spaces and any
+ *   {@link org.yaml.snakeyaml.DumperOptions.FlowStyle}.</li>
+ * </ul>
+ *
+ * <h2>Default configuration</h2>
+ * <table border="0" cellpadding="2" cellspacing="0">
+ *   <tr><th align="left">Option</th><th align="left">Value</th></tr>
+ *   <tr><td>Section separator</td><td>{@code '.'}</td></tr>
+ *   <tr><td>Indent size</td><td>{@code 2}</td></tr>
+ *   <tr><td>Flow style</td><td>{@link org.yaml.snakeyaml.DumperOptions.FlowStyle#BLOCK BLOCK}</td></tr>
+ * </table>
+ *
+ * <h2>Thread-safety note</h2>
+ * Instances of {@code YamlConfigurationLoader} are <em>not</em> thread-safe.
+ * Either restrict an instance to a single thread or provide external synchronization when sharing.
+ *
+ * @see CustomSerializer
+ * @see ConfigurationLoader
+ * @since 1.0
+ */
 public class YamlConfigurationLoader implements ConfigurationLoader
 {
     /**
@@ -78,22 +114,27 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     }
 
     /**
-     * Creates a {@link YamlConfigurationLoader} with specific options.
+     * Constructs a loader with caller-supplied formatting options.
      *
-     * @param sectionSeparator The separator char used to distinguish section breaks.
-     * @param indentSize       The amount of spaces to indent each nested node line.
-     * @param flowStyle        The flow style the YAML should have when dumped as string.
+     * @param sectionSeparator the character used to denote section boundaries
+     *                         inside compound keys
+     * @param indentSize       number of spaces to indent nested YAML nodes;
+     *                         must be between 1 and 10 inclusive
+     * @param flowStyle        the default flow style to apply when dumping YAML
+     * @throws IllegalArgumentException if {@code indentSize} is outside the 1-10 range
+     * @throws NullPointerException     if {@code flowStyle} is {@code null}
+     * @since 1.0
      */
     public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
     {
         this.sectionSeparator = sectionSeparator;
 
         // Set the indent size
-        options.setIndent(indentSize);
+        this.options.setIndent(indentSize);
 
         // Set the default flow style
-        options.setDefaultFlowStyle(flowStyle);
-        representer.setDefaultFlowStyle(flowStyle);
+        this.options.setDefaultFlowStyle(flowStyle);
+        this.representer.setDefaultFlowStyle(flowStyle);
     }
 
     /**
