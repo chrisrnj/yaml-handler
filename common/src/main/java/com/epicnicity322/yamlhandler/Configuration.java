@@ -121,22 +121,12 @@ public class Configuration extends ConfigurationSection
 
         Configuration that = (Configuration) o;
 
-        HashMap<String, Object> thatNodes = new HashMap<>();
-        HashMap<String, Object> thisNodes = new HashMap<>();
-
-        convertToMapNodes(that, thatNodes);
-        convertToMapNodes(this, thisNodes);
-
-        return thisNodes.equals(thatNodes) && Objects.equals(path, that.path);
+        return Objects.equals(filePath, that.filePath) && getNodes().equals(that.getNodes());
     }
 
     @Override
     public int hashCode()
     {
-        HashMap<String, Object> nodes = new HashMap<>();
-
-        convertToMapNodes(this, nodes);
-
-        return Objects.hash(nodes, getFilePath());
+        return Objects.hash(filePath, getNodes());
     }
 }
