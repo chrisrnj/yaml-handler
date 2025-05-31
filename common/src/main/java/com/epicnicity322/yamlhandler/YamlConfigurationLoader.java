@@ -267,12 +267,12 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         YamlConfigurationLoader that = (YamlConfigurationLoader) o;
 
-        return sectionSeparator == that.sectionSeparator && options.getIndent() == that.options.getIndent() && options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle();
+        return sectionSeparator == that.sectionSeparator && options.getIndent() == that.options.getIndent() && options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle() && Arrays.equals(customSerializers, that.customSerializers);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(sectionSeparator, options.getIndent(), options.getDefaultFlowStyle());
+        return Objects.hash(sectionSeparator, options.getIndent(), options.getDefaultFlowStyle(), Arrays.hashCode(customSerializers));
     }
 }
