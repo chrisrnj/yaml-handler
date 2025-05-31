@@ -24,7 +24,7 @@ import java.util.Map;
 
 class YamlHandlerUtil
 {
-    static void convertToConfigurationSectionNodes(ConfigurationSection input, Map<?, ?> nodes, Map<String, Object> output)
+    static void convertToConfigurationSectionNodes(char sectionSeparator, ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
     {
         for (Map.Entry<?, ?> entry : nodes.entrySet()) {
             String key = entry.getKey().toString();
@@ -33,10 +33,10 @@ class YamlHandlerUtil
             if (value instanceof Map) {
                 String path;
 
-                if (input instanceof Configuration) path = key;
-                else path = input.getPath() + input.getSectionSeparator() + key;
+                if (holder instanceof Configuration) path = key;
+                else path = holder.getPath() + sectionSeparator + key;
 
-                value = new ConfigurationSection(key, path, input, (Map<?, ?>) value, input.getSectionSeparator());
+                value = new ConfigurationSection(key, path, holder, (Map<?, ?>) value, sectionSeparator);
             }
 
             output.put(key, value);
@@ -46,24 +46,19 @@ class YamlHandlerUtil
     static void getAbsoluteNodes(ConfigurationSection input, Map<String, Object> output)
     {
         Map<String, Object> nodes = input.getNodes();
-        if (nodes.isEmpty()) {
-            output.put(input.getPath(), input);
-            return;
-        }
 
-        for (Map.Entry<String, Object> entry : nodes.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
+        if (nodes.isEmpty()) output.put(input.getPath(), input);
+        else {
+            for (Map.Entry<String, Object> node : nodes.entrySet()) {
+                String key = node.getKey();
+                Object object = node.getValue();
 
-            if (value instanceof ConfigurationSection) {
-                getAbsoluteNodes((ConfigurationSection) value, output);
-            } else {
-                String path;
-
-                if (input instanceof Configuration) path = key;
-                else path = input.getPath() + input.getSectionSeparator() + key;
-
-                output.put(path, value);
+                if (object instanceof ConfigurationSection) {
+                    getAbsoluteNodes((ConfigurationSection) object, output);
+                } else {
+                    String keyPath = input instanceof Configuration ? key : input.getPath() + input.getSectionSeparator() + key;
+                    output.put(keyPath, object);
+                }
             }
         }
     }
