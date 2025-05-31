@@ -37,6 +37,8 @@ public interface ConfigurationLoader
 
     @NotNull String dump(@NotNull Map<String, Object> nodes);
 
+    @NotNull CustomSerializer<?>[] getCustomSerializers();
+
     /**
      * Returns the {@link CustomSerializer} that has been registered for the given type, or {@code null} if no
      * serializer has been registered.
@@ -69,13 +71,23 @@ public interface ConfigurationLoader
      * @param <T>  the type handled by the serializer
      * @param type the class literal representing {@code T}; must not be {@code null}
      * @return the registered serializer for {@code type}, or {@code null} if none is present
+     * @since 1.5
      */
-    <T> @Nullable CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type);
+    default <T> @Nullable CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type)
+    {
+        for (CustomSerializer<?> customSerializer : getCustomSerializers()) {
+            if (customSerializer != null && customSerializer.type().isAssignableFrom(type))
+                //noinspection unchecked
+                return (CustomSerializer<T>) customSerializer;
+        }
+        return null;
+    }
 
     /**
      * The character used for separating nodes on a {@link Configuration}.
      *
      * @return the section separator char
+     * @since 1.5
      */
     char getSectionSeparator();
 }

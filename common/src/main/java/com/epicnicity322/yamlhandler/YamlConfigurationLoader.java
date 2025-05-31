@@ -22,7 +22,6 @@ package com.epicnicity322.yamlhandler;
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -243,14 +242,9 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     }
 
     @Override
-    public @Nullable <T> CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type)
+    public @NotNull CustomSerializer<?>[] getCustomSerializers()
     {
-        for (CustomSerializer<?> customSerializer : customSerializers) {
-            if (customSerializer != null && customSerializer.type().isAssignableFrom(type))
-                //noinspection unchecked
-                return (CustomSerializer<T>) customSerializer;
-        }
-        return null;
+        return Arrays.copyOf(customSerializers, customSerializers.length);
     }
 
     @Override
