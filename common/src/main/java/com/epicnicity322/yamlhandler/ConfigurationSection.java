@@ -36,13 +36,13 @@ import java.util.function.Function;
 
 public class ConfigurationSection
 {
-    private final @NotNull LinkedHashMap<String, Object> nodes = new LinkedHashMap<>();
-    private final @NotNull Map<String, Object> unmodifiableNodes = Collections.unmodifiableMap(nodes);
-    private final @NotNull HashMap<String, Object> cache = new HashMap<>();
+    private final @NotNull LinkedHashMap<String, Object> nodes;
+    private final @NotNull Map<String, Object> unmodifiableNodes;
+    private final @NotNull HashMap<String, Object> cache;
     private final @NotNull String name;
     private final @NotNull String path;
+    private final @NotNull Configuration root;
     private final @Nullable ConfigurationSection parent;
-    private final Configuration root;
     private final char sectionSeparator;
 
     ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, char sectionSeparator)
@@ -51,7 +51,7 @@ public class ConfigurationSection
         if (parent == null) {
             if (!(this instanceof Configuration))
                 throw new IllegalArgumentException("Parent can not be null unless this is a root section.");
-            this.root = null;
+            else this.root = (Configuration) this;
         } else this.root = parent.getRoot();
 
         this.name = name;
@@ -59,7 +59,14 @@ public class ConfigurationSection
         this.parent = parent;
         this.sectionSeparator = sectionSeparator;
 
-        if (nodes != null) YamlHandlerUtil.convertToConfigurationSectionNodes(this, nodes, this.nodes);
+        int initialCapacity = nodes == null ? 2 : (int) (nodes.size() / .75f) + 1;
+
+        this.nodes = new LinkedHashMap<>(initialCapacity);
+        this.unmodifiableNodes = Collections.unmodifiableMap(this.nodes);
+        this.cache = new HashMap<>(initialCapacity);
+
+        if (nodes != null)
+            YamlHandlerUtil.convertToConfigurationSectionNodes(sectionSeparator, this, nodes, this.nodes);
     }
 
     /**
@@ -99,15 +106,18 @@ public class ConfigurationSection
      *
      * @return The root {@link Configuration}.
      */
-    public @NotNull Configuration getRoot()
+    public final @NotNull Configuration getRoot()
     {
         return root;
     }
 
     /**
-     * Gets the separator char used to distinguish sections on a path.
+     * Gets the character used for separating nodes on this {@link Configuration}.
+     * <p>
+     * This value is guaranteed to be the same as it was when this class was instanced, unlike
+     * {@link ConfigurationLoader#getSectionSeparator()} that immutability is not guaranteed.
      *
-     * @return The section separation char.
+     * @return the section separator char
      */
     public final char getSectionSeparator()
     {
@@ -115,17 +125,51 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets the nodes from this section to the end. Which means this map will have no {@link ConfigurationSection} as
-     * values, all the keys are the name of the configuration sections separated by section separator char.
+     * Builds a *flat* view of the configuration tree that starts at this
+     * section, returning every node in a single {@link LinkedHashMap}.
+     * <strong>How the map is populated</strong>
+     * <ul>
+     *   <li>The **key** is the node’s <em>absolute path</em>—all path segments
+     *       joined with the character returned by {@link #getSectionSeparator()}.</li>
+     *   <li>The **value** is the object stored at that node.
+     *       If the node is an otherwise-empty {@code ConfigurationSection},
+     *       the section instance itself is stored as the value.</li>
+     * </ul>
+     * The map is created on every call, so modifications to the returned map do <em>not</em> affect the underlying
+     * configuration, and vice versa. Insertion order corresponds to a depth-first traversal of the tree, making the
+     * output predictable and suitable for serialization.
      *
-     * @return An immutable map with all the absolute nodes of this section.
+     * <h4>Example</h4>
+     *
+     * <pre>
+     * {@code
+     *     logging:
+     *       file:
+     *         path: "/var/log/app.log"
+     *         maxSizeMB: 10
+     *       console: true
+     *     version: 1
+     * }
+     * </pre>
+     * <p>
+     * Calling {@code getAbsoluteNodes()} on the root section produces:
+     *
+     * <pre>
+     * {
+     *   "logging.file.path"      = "/var/log/app.log",
+     *   "logging.file.maxSizeMB" = "10",
+     *   "logging.console"        = true,
+     *   "version"                = 1
+     * }
+     * </pre>
+     *
+     * @return a new, modifiable {@code LinkedHashMap}&lt;String,Object&gt;
+     * containing every absolute node rooted at this section
      */
     public @NotNull LinkedHashMap<String, Object> getAbsoluteNodes()
     {
         LinkedHashMap<String, Object> output = new LinkedHashMap<>();
-
         YamlHandlerUtil.getAbsoluteNodes(this, output);
-
         return output;
     }
 
@@ -207,7 +251,7 @@ public class ConfigurationSection
                 if (absolutePath.length() > 0) absolutePath.append(sectionSeparator);
                 absolutePath.append(part);
 
-                ConfigurationSection newSection = new ConfigurationSection(part, absolutePath.toString(), current, Collections.emptyMap(), sectionSeparator);
+                ConfigurationSection newSection = new ConfigurationSection(part, absolutePath.toString(), current, null, sectionSeparator);
 
                 current.removeCaches(part);
                 current.nodes.put(part, newSection);
@@ -224,13 +268,10 @@ public class ConfigurationSection
     {
         // Removing all caches associated to this key.
         cache.keySet().removeIf(cacheKey -> {
-            String firstKey;
             int index = cacheKey.indexOf(sectionSeparator);
+            String firstPart = index == -1 ? cacheKey : cacheKey.substring(0, index);
 
-            if (index == -1) firstKey = cacheKey;
-            else firstKey = cacheKey.substring(0, index);
-
-            return firstKey.equals(key);
+            return firstPart.equals(key);
         });
     }
 
@@ -269,7 +310,7 @@ public class ConfigurationSection
         Object value = get(path);
         Boolean result = null;
 
-        if (value instanceof Boolean) result = Boolean.TRUE.equals(value);
+        if (value instanceof Boolean) result = (Boolean) value;
 
         return Optional.ofNullable(result);
     }
