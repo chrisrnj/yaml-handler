@@ -448,12 +448,12 @@ public class ConfigurationSection
 
         ConfigurationSection that = (ConfigurationSection) o;
 
-        return nodes.equals(that.nodes) && path.equals(that.path) && Objects.equals(root, that.root);
+        return path.equals(that.path) && nodes.equals(that.nodes);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(nodes, path, root);
+        return Objects.hash(path, nodes);
     }
 }
