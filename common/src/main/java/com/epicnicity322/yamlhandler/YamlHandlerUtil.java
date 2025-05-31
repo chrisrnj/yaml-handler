@@ -63,20 +63,19 @@ class YamlHandlerUtil
         }
     }
 
-    static void convertToMapNodes(ConfigurationSection input, Map<String, Object> output)
+    static Map<String, Object> convertToMapNodes(ConfigurationSection section)
     {
-        for (Map.Entry<String, Object> entry : input.getNodes().entrySet()) {
+        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>((int) Math.ceil(section.getNodes().size() / .75f));
+
+        for (Map.Entry<String, Object> entry : section.getNodes().entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if (value instanceof ConfigurationSection) {
-                LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+            if (value instanceof ConfigurationSection) value = convertToMapNodes((ConfigurationSection) value);
 
-                convertToMapNodes((ConfigurationSection) value, map);
-                value = map;
-            }
-
-            output.put(key, value);
+            mapNodes.put(key, value);
         }
+
+        return mapNodes;
     }
 }

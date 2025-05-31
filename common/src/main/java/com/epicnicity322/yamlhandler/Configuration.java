@@ -27,12 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToMapNodes;
 
 public class Configuration extends ConfigurationSection
 {
@@ -102,10 +99,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull String dump()
     {
-        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>((int) (this.getNodes().size() / .75f) + 1);
-
-        convertToMapNodes(this, mapNodes);
-        return loader.dump(mapNodes);
+        return loader.dump(YamlHandlerUtil.convertToMapNodes(this));
     }
 
     /**
