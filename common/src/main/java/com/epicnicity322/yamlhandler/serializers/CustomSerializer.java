@@ -34,15 +34,25 @@ import java.util.Map;
  * the serialization process is required.
  *
  * @param <T> the type of object this serializer handles
+ * @since 1.5
  */
 public interface CustomSerializer<T>
 {
+    /**
+     * Whether the nodes can be deserialized with this custom serializer.
+     *
+     * @param nodes a non-null map of keys and values that might or might not be the object's serialized state
+     * @return if the map can be deserialized as an object of this custom serializer
+     */
+    boolean isDeserializable(@NotNull Map<String, Object> nodes);
+
     /**
      * Converts an object of type {@code T} into a map representation that can be stored in YAML.
      *
      * @param obj the object to serialize; must not be {@code null}
      * @return a non-null map containing key-value pairs representing the object's state
      * @throws IllegalArgumentException if the object cannot be serialized
+     * @since 1.5
      */
     @NotNull Map<String, Object> serialize(@NotNull T obj);
 
@@ -55,6 +65,7 @@ public interface CustomSerializer<T>
      * @param nodes a non-null map of keys and values representing the object's serialized state
      * @return a fully reconstructed instance of {@code T}
      * @throws IllegalArgumentException if deserialization fails due to invalid or incomplete data
+     * @since 1.5
      */
     @NotNull T deserialize(@NotNull Map<String, Object> nodes);
 
@@ -65,6 +76,7 @@ public interface CustomSerializer<T>
      * should accurately reflect the target type.
      *
      * @return the non-null {@code Class} instance for {@code T}
+     * @since 1.5
      */
     @NotNull Class<T> type();
 }
