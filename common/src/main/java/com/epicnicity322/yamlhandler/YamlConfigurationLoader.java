@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -236,6 +237,12 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     }
 
     @Override
+    public @NotNull String dump(@NotNull Map<String, Object> nodes)
+    {
+        return yaml.dump(nodes);
+    }
+
+    @Override
     public @Nullable <T> CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type)
     {
         for (CustomSerializer<?> customSerializer : customSerializers) {
@@ -244,6 +251,12 @@ public class YamlConfigurationLoader implements ConfigurationLoader
                 return (CustomSerializer<T>) customSerializer;
         }
         return null;
+    }
+
+    @Override
+    public char getSectionSeparator()
+    {
+        return sectionSeparator;
     }
 
     @Override

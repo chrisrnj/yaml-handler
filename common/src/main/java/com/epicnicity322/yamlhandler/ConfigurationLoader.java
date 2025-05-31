@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Reader;
 import java.nio.file.Path;
+import java.util.Map;
 
 public interface ConfigurationLoader
 {
@@ -33,6 +34,8 @@ public interface ConfigurationLoader
     @NotNull Configuration load(@NotNull Path path) throws Exception;
 
     @NotNull Configuration load(@NotNull String contents) throws Exception;
+
+    @NotNull String dump(@NotNull Map<String, Object> nodes);
 
     /**
      * Returns the {@link CustomSerializer} that has been registered for the given type, or {@code null} if no
@@ -68,4 +71,11 @@ public interface ConfigurationLoader
      * @return the registered serializer for {@code type}, or {@code null} if none is present
      */
     <T> @Nullable CustomSerializer<T> getCustomSerializer(@NotNull Class<T> type);
+
+    /**
+     * The character used for separating nodes on a {@link Configuration}.
+     *
+     * @return the section separator char
+     */
+    char getSectionSeparator();
 }
