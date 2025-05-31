@@ -27,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -37,31 +36,25 @@ import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToMapNodes;
 
 public class Configuration extends ConfigurationSection
 {
-    private final @Nullable Path path;
-    private final @NotNull YamlConfigurationLoader loader;
+    private final @Nullable Path filePath;
+    private final @NotNull ConfigurationLoader loader;
 
     /**
      * Creates a configuration holder with no nodes.
      *
-     * @param loader The loader used to get the separation char and {@link org.yaml.snakeyaml.DumperOptions}.
+     * @param loader The loader used to get the configuration loading and saving options.
      */
-    public Configuration(@NotNull YamlConfigurationLoader loader)
+    public Configuration(@NotNull ConfigurationLoader loader)
     {
-        this(null, new LinkedHashMap<>(), loader);
+        this(null, null, loader);
     }
 
-    protected Configuration(@Nullable Path path, @NotNull Map<?, ?> nodes, @NotNull YamlConfigurationLoader loader)
+    protected Configuration(@Nullable Path filePath, @Nullable Map<?, ?> nodes, @NotNull ConfigurationLoader loader)
     {
-        super("", "", null, nodes, loader.sectionSeparator);
+        super("", "", null, nodes, loader.getSectionSeparator());
 
-        this.path = path;
+        this.filePath = filePath;
         this.loader = loader;
-    }
-
-    @Override
-    public @NotNull Configuration getRoot()
-    {
-        return this;
     }
 
     /**
@@ -72,7 +65,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull Optional<Path> getFilePath()
     {
-        return Optional.ofNullable(path);
+        return Optional.ofNullable(filePath);
     }
 
     /**
@@ -103,16 +96,16 @@ public class Configuration extends ConfigurationSection
     }
 
     /**
-     * Serializes the nodes and sections to readable YAML text.
+     * Serializes the nodes and sections to a readable configuration text.
      *
-     * @return The contents of this YAML.
+     * @return The contents of this configuration as string.
      */
     public @NotNull String dump()
     {
-        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>((int) (this.getNodes().size() / .75f) + 1);
 
         convertToMapNodes(this, mapNodes);
-        return loader.yaml.dump(mapNodes);
+        return loader.dump(mapNodes);
     }
 
     /**
