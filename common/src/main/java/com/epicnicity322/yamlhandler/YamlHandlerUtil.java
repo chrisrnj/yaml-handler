@@ -24,19 +24,16 @@ import java.util.Map;
 
 class YamlHandlerUtil
 {
-    static void convertToConfigurationSectionNodes(char sectionSeparator, ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
+    static void convertToConfigurationSectionNodes(ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
     {
         for (Map.Entry<?, ?> entry : nodes.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
 
+            if (value instanceof ConfigurationSection) value = convertToMapNodes((ConfigurationSection) value);
             if (value instanceof Map) {
-                String path;
-
-                if (holder instanceof Configuration) path = key;
-                else path = holder.getPath() + sectionSeparator + key;
-
-                value = new ConfigurationSection(key, path, holder, (Map<?, ?>) value, sectionSeparator);
+                String path = holder instanceof Configuration ? key : holder.getPath() + holder.getSectionSeparator() + key;
+                value = new ConfigurationSection(key, path, holder, (Map<?, ?>) value, holder.getSectionSeparator());
             }
 
             output.put(key, value);
