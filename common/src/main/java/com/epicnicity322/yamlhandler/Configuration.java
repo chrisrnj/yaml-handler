@@ -48,7 +48,7 @@ public class Configuration extends ConfigurationSection
 
     protected Configuration(@Nullable Path filePath, @Nullable Map<?, ?> nodes, @NotNull ConfigurationLoader loader)
     {
-        super("", "", null, nodes, loader.getSectionSeparator());
+        super("", null, nodes, loader);
 
         this.filePath = filePath;
         this.loader = loader;
@@ -63,6 +63,11 @@ public class Configuration extends ConfigurationSection
     public @NotNull Optional<Path> getFilePath()
     {
         return Optional.ofNullable(filePath);
+    }
+
+    public @NotNull ConfigurationLoader getLoader()
+    {
+        return loader;
     }
 
     /**
