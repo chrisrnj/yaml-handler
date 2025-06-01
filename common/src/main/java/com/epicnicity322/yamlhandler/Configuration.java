@@ -40,10 +40,24 @@ public class Configuration extends ConfigurationSection
      * Creates a configuration holder with no nodes.
      *
      * @param loader The loader used to get the configuration loading and saving options.
+     * @see #Configuration(ConfigurationLoader, Map)
+     * @since 1.0
      */
     public Configuration(@NotNull ConfigurationLoader loader)
     {
-        this(null, null, loader);
+        this(loader, null);
+    }
+
+    /**
+     * Creates a configuration holder with a preloaded map of nodes.
+     *
+     * @param loader The loader used to get the configuration loading and saving options.
+     * @param nodes  The map of nodes, any nested {@link Map} or {@link ConfigurationSection} will be converted to new instances of {@link ConfigurationSection}.
+     * @since 1.5
+     */
+    public Configuration(@NotNull ConfigurationLoader loader, @Nullable Map<?, ?> nodes)
+    {
+        this(null, nodes, loader);
     }
 
     protected Configuration(@Nullable Path filePath, @Nullable Map<?, ?> nodes, @NotNull ConfigurationLoader loader)

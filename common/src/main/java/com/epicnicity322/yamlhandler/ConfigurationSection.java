@@ -100,7 +100,8 @@ public class ConfigurationSection
     /**
      * The parent section this section is nested in.
      *
-     * @return The parent section or null if this section has no parent.
+     * @return The parent section or null if this section is the root.
+     * @since 1.0
      */
     public @Nullable ConfigurationSection getParent()
     {
@@ -292,13 +293,38 @@ public class ConfigurationSection
     }
 
     /**
-     * Creates a new section or get an already existing section on the given path. If the path is a section path, the
-     * sections that do not exist are automatically created.
+     * Creates a new empty section or gets an existing section on the given path. If the path has section separators, the
+     * unexisting sections are created automatically.
+     * <p>
+     * Any intermediate value at the path that's not an existing {@link ConfigurationSection}, gets replaced by a new
+     * section.
      *
      * @param path The path to create the section or get the already existing one.
      * @return The created section.
+     * @see #createSection(String, Map)
+     * @since 1.0
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path)
+    {
+        return createSection(path, null);
+    }
+
+    /**
+     * Creates a new section or gets an existing section on the given path. If the path has section separators, the
+     * unexisting sections are created automatically.
+     * <p>
+     * Any intermediate value at the path that's not an existing {@link ConfigurationSection}, gets replaced by a new
+     * section.
+     * <p>
+     * If the section did not exist, it is created preloaded with the specified nodes on {@code nodes} parameter. Any
+     * nested {@link Map} or {@link ConfigurationSection} will be converted to new instances of
+     * {@link ConfigurationSection}.
+     *
+     * @param path The path to create the section or get the already existing one.
+     * @return The created section.
+     * @since 1.5
+     */
+    public @NotNull ConfigurationSection createSection(@NotNull String path, @Nullable Map<?, ?> nodes)
     {
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
         ConfigurationSection current = this;
@@ -307,11 +333,10 @@ public class ConfigurationSection
             String part = tokens.nextToken();
 
             if (!(current.nodes.get(part) instanceof ConfigurationSection)) {
-                ConfigurationSection newSection = new ConfigurationSection(part, current, null);
+                ConfigurationSection newSection = new ConfigurationSection(part, current, nodes);
 
                 current.removeCaches(part);
                 current.nodes.put(part, newSection);
-                current.cache.put(part, newSection);
             }
 
             current = (ConfigurationSection) current.nodes.get(part);
@@ -320,7 +345,7 @@ public class ConfigurationSection
         return current;
     }
 
-    private void removeCaches(String key)
+    protected void removeCaches(String key)
     {
         // Removing all caches associated to this key.
         cache.keySet().removeIf(cacheKey -> {
