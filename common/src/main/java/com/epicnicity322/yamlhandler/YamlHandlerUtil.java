@@ -19,22 +19,28 @@
 
 package com.epicnicity322.yamlhandler;
 
+import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 class YamlHandlerUtil
 {
-    static void convertToConfigurationSectionNodes(ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
+    static void convertToConfigurationSectionNodes(ConfigurationLoader loader, ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
     {
         for (Map.Entry<?, ?> entry : nodes.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
 
             if (value == ConfigurationSection.NULL_VALUE) value = null;
-            if (value instanceof ConfigurationSection) value = ((ConfigurationSection) value).getNodes();
-            if (value instanceof Map) {
-                String path = holder instanceof Configuration ? key : holder.getPath() + holder.getSectionSeparator() + key;
-                value = new ConfigurationSection(key, path, holder, (Map<?, ?>) value, holder.getSectionSeparator());
+            else {
+                if (value instanceof ConfigurationSection) value = ((ConfigurationSection) value).getNodes();
+                if (value instanceof Map) {
+                    ConfigurationSection section = new ConfigurationSection(key, holder, (Map<?, ?>) value, loader);
+                    Object deserialized = tryDeserialize(section, loader.getCustomSerializers());
+                    value = deserialized != null ? deserialized : section;
+                }
             }
 
             output.put(key, value);
@@ -75,5 +81,18 @@ class YamlHandlerUtil
         }
 
         return mapNodes;
+    }
+
+    static @Nullable Object tryDeserialize(ConfigurationSection section, CustomSerializer<?>[] serializers)
+    {
+        Map<String, Object> nodes = section.getNodes();
+
+        for (CustomSerializer<?> serializer : serializers) {
+            if (serializer == null) continue;
+            if (serializer.isDeserializable(nodes)) {
+                return serializer.deserialize(serializer.usesConfigurationSectionNodes() ? nodes : convertToMapNodes(section));
+            }
+        }
+        return null;
     }
 }
