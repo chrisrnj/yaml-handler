@@ -31,6 +31,10 @@ import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToConfigurati
 
 public class ConfigurationSection
 {
+    /**
+     * A value to serve as an identifier to {@code null} when setting nodes through {@link #set(String, Object)}.
+     */
+    public static final @NotNull Object NULL_VALUE = new Object();
     private final @NotNull LinkedHashMap<String, Object> nodes;
     private final @NotNull Map<String, Object> unmodifiableNodes;
     private final @NotNull HashMap<String, Object> cache;
@@ -237,6 +241,7 @@ public class ConfigurationSection
      * <ul>
      *   <li>If the intermediate section(s) in {@code path} do not yet exist, they are created automatically.</li>
      *   <li>If {@code value == null}, the node (or entire section) addressed by {@code path} is removed.</li>
+     *   <li>If <code>value == {@link #NULL_VALUE}</code>, the path is assigned a {@code null} value.</li>
      *   <li>If {@code value} is a {@link ConfigurationSection}, a new section is created at {@code path} and all of
      *   that section’s nodes are copied into it via {@link #putAll(ConfigurationSection)}.</li>
      *   <li>If {@code value} is a {@link java.util.Map Map}, a new section is created at {@code path} and its key-value
@@ -275,10 +280,7 @@ public class ConfigurationSection
             } else {
                 current.removeCaches(part);
                 if (value == null) current.nodes.remove(part);
-                else {
-                    current.nodes.put(part, value);
-                    current.cache.put(part, value);
-                }
+                else current.nodes.put(part, value == NULL_VALUE ? null : value);
             }
         }
 

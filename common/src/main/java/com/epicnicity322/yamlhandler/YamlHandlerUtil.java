@@ -30,6 +30,7 @@ class YamlHandlerUtil
             String key = entry.getKey().toString();
             Object value = entry.getValue();
 
+            if (value == ConfigurationSection.NULL_VALUE) value = null;
             if (value instanceof ConfigurationSection) value = ((ConfigurationSection) value).getNodes();
             if (value instanceof Map) {
                 String path = holder instanceof Configuration ? key : holder.getPath() + holder.getSectionSeparator() + key;
