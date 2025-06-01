@@ -19,20 +19,15 @@
 
 package com.epicnicity322.yamlhandler;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.function.Function;
+
+import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToConfigurationSectionNodes;
 
 public class ConfigurationSection
 {
@@ -52,7 +47,11 @@ public class ConfigurationSection
             if (!(this instanceof Configuration))
                 throw new IllegalArgumentException("Parent can not be null unless this is a root section.");
             else this.root = (Configuration) this;
-        } else this.root = parent.getRoot();
+        } else {
+            if (sectionSeparator != parent.sectionSeparator)
+                throw new IllegalArgumentException("Parent has a different section separator.");
+            this.root = parent.getRoot();
+        }
 
         this.name = name;
         this.path = path;
@@ -65,8 +64,7 @@ public class ConfigurationSection
         this.unmodifiableNodes = Collections.unmodifiableMap(this.nodes);
         this.cache = new HashMap<>(initialCapacity);
 
-        if (nodes != null)
-            YamlHandlerUtil.convertToConfigurationSectionNodes(sectionSeparator, this, nodes, this.nodes);
+        if (nodes != null) convertToConfigurationSectionNodes(this, nodes, this.nodes);
     }
 
     /**
@@ -200,16 +198,72 @@ public class ConfigurationSection
     }
 
     /**
-     * Sets a value in the specified path. If the path is a section path, the value is set on that section. If the section
-     * doesn't exist, the section is automatically created. If a value is already assigned to this path, the old value is
-     * replaced by the specified value. Set the value to null to delete that node or section.
+     * Recursively copies every node from the supplied {@code section} into this section, overwriting nodes with
+     * matching keys.
+     * <p>
+     * Nested sections in {@code section} are converted to new instances of {@link ConfigurationSection}, so that the
+     * hierarchy behavior is preserved.
      *
-     * @param path  The path with sections separated by section separator char.
-     * @param value The value to be assigned to this path or null to delete the path.
-     * @return The value that was set.
+     * @param section source section whose nodes should be merged into this one
+     * @since 1.5
      */
+    public void putAll(@NotNull ConfigurationSection section)
+    {
+        putAll(section.nodes);
+    }
+
+    /**
+     * Adds all key-value pairs from the given {@code nodes} map into this configuration section.
+     * <p>
+     * Special handling:
+     * <ul>
+     *   <li>If a value in the map is a nested {@link java.util.Map Map} or {@link ConfigurationSection},
+     *       it is recursively converted into a new {@link ConfigurationSection} with the correct parent hierarchy.</li>
+     *   <li>Otherwise, the value is assigned directly at the corresponding key.</li>
+     * </ul>
+     *
+     * @param nodes a map of keys and values to add as nodes in this section
+     * @since 1.5
+     */
+    public void putAll(@NotNull Map<?, ?> nodes)
+    {
+        convertToConfigurationSectionNodes(this, nodes, this.nodes);
+    }
+
+    /**
+     * Associates a value with the node identified by the given {@code path}.
+     * <p>
+     * Behaviour rules:
+     * <ul>
+     *   <li>If the intermediate section(s) in {@code path} do not yet exist, they are created automatically.</li>
+     *   <li>If {@code value == null}, the node (or entire section) addressed by {@code path} is removed.</li>
+     *   <li>If {@code value} is a {@link ConfigurationSection}, a new section is created at {@code path} and all of
+     *   that section’s nodes are copied into it via {@link #putAll(ConfigurationSection)}.</li>
+     *   <li>If {@code value} is a {@link java.util.Map Map}, a new section is created at {@code path} and its key-value
+     *   entries are added using {@link #putAll(Map)}.</li>
+     *   <li>Otherwise, any existing value at {@code path} is replaced with {@code value}.</li>
+     * </ul>
+     *
+     * @param path  hierarchical path to the target node, whose segments are separated by the configured
+     *              section-separator character
+     * @param value value to assign, or {@code null} to delete the node/section
+     * @param <T>   compile-time type of {@code value}; the same reference is returned for fluent usage
+     * @return the same object reference passed in as {@code value}
+     * @implNote The node cache for the final segment of {@code path} is cleared before mutation.
+     * @since 1.0
+     */
+    @Contract("_,_ -> param2")
     public <T> T set(@NotNull String path, @Nullable T value)
     {
+        if (value instanceof ConfigurationSection) {
+            createSection(path).putAll((ConfigurationSection) value);
+            return value;
+        }
+        if (value instanceof Map) {
+            createSection(path).putAll((Map<?, ?>) value);
+            return value;
+        }
+
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
         ConfigurationSection current = this;
 
