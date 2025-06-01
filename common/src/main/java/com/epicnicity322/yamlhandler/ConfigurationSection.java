@@ -19,10 +19,7 @@
 
 package com.epicnicity322.yamlhandler;
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnmodifiableView;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -44,23 +41,30 @@ public class ConfigurationSection
     private final @Nullable ConfigurationSection parent;
     private final char sectionSeparator;
 
-    ConfigurationSection(@NotNull String name, @NotNull String path, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, char sectionSeparator)
+    protected ConfigurationSection(@NotNull String name, @NotNull ConfigurationSection parent, @Nullable Map<?, ?> startingNodes)
+    {
+        this(name, parent, startingNodes, parent.root.getLoader());
+    }
+
+    @ApiStatus.Internal
+    ConfigurationSection(@NotNull String name, @Nullable ConfigurationSection parent, @Nullable Map<?, ?> nodes, @NotNull ConfigurationLoader loader)
     {
         // Parent can only be null if this is constructed by the root.
         if (parent == null) {
             if (!(this instanceof Configuration))
                 throw new IllegalArgumentException("Parent can not be null unless this is a root section.");
-            else this.root = (Configuration) this;
+            this.root = (Configuration) this;
+            this.name = "";
+            this.path = "";
+            this.sectionSeparator = loader.getSectionSeparator();
         } else {
-            if (sectionSeparator != parent.sectionSeparator)
-                throw new IllegalArgumentException("Parent has a different section separator.");
             this.root = parent.getRoot();
+            this.name = name;
+            this.sectionSeparator = parent.sectionSeparator;
+            this.path = parent instanceof Configuration ? name : parent.path + sectionSeparator + name;
         }
 
-        this.name = name;
-        this.path = path;
         this.parent = parent;
-        this.sectionSeparator = sectionSeparator;
 
         int initialCapacity = nodes == null ? 2 : (int) (nodes.size() / .75f) + 1;
 
@@ -68,7 +72,7 @@ public class ConfigurationSection
         this.unmodifiableNodes = Collections.unmodifiableMap(this.nodes);
         this.cache = new HashMap<>(initialCapacity);
 
-        if (nodes != null) convertToConfigurationSectionNodes(this, nodes, this.nodes);
+        if (nodes != null) convertToConfigurationSectionNodes(loader, this, nodes, this.nodes);
     }
 
     /**
@@ -231,7 +235,7 @@ public class ConfigurationSection
      */
     public void putAll(@NotNull Map<?, ?> nodes)
     {
-        convertToConfigurationSectionNodes(this, nodes, this.nodes);
+        convertToConfigurationSectionNodes(root.getLoader(), this, nodes, this.nodes);
     }
 
     /**
@@ -297,17 +301,13 @@ public class ConfigurationSection
     public @NotNull ConfigurationSection createSection(@NotNull String path)
     {
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
-        StringBuilder absolutePath = new StringBuilder(this.path);
         ConfigurationSection current = this;
 
         while (tokens.hasMoreTokens()) {
             String part = tokens.nextToken();
 
             if (!(current.nodes.get(part) instanceof ConfigurationSection)) {
-                if (absolutePath.length() > 0) absolutePath.append(sectionSeparator);
-                absolutePath.append(part);
-
-                ConfigurationSection newSection = new ConfigurationSection(part, absolutePath.toString(), current, null, sectionSeparator);
+                ConfigurationSection newSection = new ConfigurationSection(part, current, null);
 
                 current.removeCaches(part);
                 current.nodes.put(part, newSection);
