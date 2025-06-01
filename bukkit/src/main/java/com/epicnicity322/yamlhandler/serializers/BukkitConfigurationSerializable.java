@@ -23,6 +23,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -54,7 +55,9 @@ public class BukkitConfigurationSerializable implements CustomSerializer<Configu
     @Override
     public @NotNull Map<String, Object> serialize(@NotNull ConfigurationSerializable obj)
     {
-        return obj.serialize();
+        Map<String, Object> serialized = new LinkedHashMap<>(obj.serialize());
+        serialized.put(ConfigurationSerialization.SERIALIZED_TYPE_KEY, ConfigurationSerialization.getAlias(obj.getClass()));
+        return serialized;
     }
 
     @Override

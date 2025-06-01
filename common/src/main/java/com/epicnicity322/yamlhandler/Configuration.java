@@ -118,7 +118,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull String dump()
     {
-        return loader.dump(YamlHandlerUtil.convertToMapNodes(this));
+        return loader.dump(YamlHandlerUtil.convertToMapNodes(this, true));
     }
 
     /**
