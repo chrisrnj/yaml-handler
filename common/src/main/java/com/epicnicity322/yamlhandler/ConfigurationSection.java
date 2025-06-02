@@ -504,6 +504,27 @@ public class ConfigurationSection
     }
 
     /**
+     * Gets an {@link Object} if one exists on this path.
+     * <p>
+     * If the object exists on the path and has {@code null} assigned to it, {@link #NULL_VALUE} is the value on the
+     * returned {@link Optional}.
+     * <p>
+     * This object can be an instance of any type that is supported by the root's {@link ConfigurationLoader}, which may
+     * not be provided by a dedicated method of this class. It can also be a {@link ConfigurationSection}, or an object
+     * manually set with {@link #set(String, Object)} and {@link #putAll(Map)}.
+     *
+     * @param path The path with sections separated by section separator char.
+     * @return Optional with the object set on the path.
+     * @see #contains(String)
+     * @since 1.5
+     */
+    public @NotNull Optional<Object> getNullableObject(@NotNull String path)
+    {
+        Object result = get(path, true);
+        return Optional.ofNullable(result);
+    }
+
+    /**
      * Gets a {@link String} if one exists on this path.
      *
      * @param path The path with sections separated by section separator char.
