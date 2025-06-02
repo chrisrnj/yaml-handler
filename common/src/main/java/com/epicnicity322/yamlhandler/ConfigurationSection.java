@@ -247,9 +247,9 @@ public class ConfigurationSection
      *   <li>If {@code value == null}, the node (or entire section) addressed by {@code path} is removed.</li>
      *   <li>If <code>value == {@link #NULL_VALUE}</code>, the path is assigned a {@code null} value.</li>
      *   <li>If {@code value} is a {@link ConfigurationSection}, a new section is created at {@code path} and all of
-     *   that section’s nodes are copied into it via {@link #putAll(ConfigurationSection)}.</li>
+     *   that section’s nodes are copied into it via {@link #createSection(String, Map)}.</li>
      *   <li>If {@code value} is a {@link java.util.Map Map}, a new section is created at {@code path} and its key-value
-     *   entries are added using {@link #putAll(Map)}.</li>
+     *   entries are added using {@link #createSection(String, Map)}.</li>
      *   <li>Otherwise, any existing value at {@code path} is replaced with {@code value}.</li>
      * </ul>
      *
@@ -265,11 +265,11 @@ public class ConfigurationSection
     public <T> T set(@NotNull String path, @Nullable T value)
     {
         if (value instanceof ConfigurationSection) {
-            createSection(path).putAll((ConfigurationSection) value);
+            createSection(path, ((ConfigurationSection) value).nodes);
             return value;
         }
         if (value instanceof Map) {
-            createSection(path).putAll((Map<?, ?>) value);
+            createSection(path, (Map<?, ?>) value);
             return value;
         }
 
