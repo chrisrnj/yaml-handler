@@ -29,9 +29,11 @@ import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToConfigurati
 public class ConfigurationSection
 {
     /**
-     * A value to serve as an identifier to {@code null} when setting nodes through {@link #set(String, Object)}.
+     * A value to serve as an identifier to {@code null} when setting nodes through {@link #set(String, Object)}, and
+     * only that.
      */
     public static final @NotNull Object NULL_VALUE = new Object();
+
     private final @NotNull LinkedHashMap<String, Object> nodes;
     private final @NotNull Map<String, Object> unmodifiableNodes;
     private final transient @NotNull HashMap<String, Object> cache = new HashMap<>();
@@ -75,10 +77,13 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets the name of this configuration section. If this is the root section the path is an empty string.
+     * Gets the name of this configuration section.
+     * <p>
+     * If this is the root section, the path is an empty string.
      *
      * @return The name of this section.
      * @see Configuration#getFilePath()
+     * @since 1.0
      */
     public @NotNull String getName()
     {
@@ -86,10 +91,13 @@ public class ConfigurationSection
     }
 
     /**
-     * The path of this configuration section. If this is the root section the path is an empty string.
+     * The absolute path of this configuration section.
+     * <p>
+     * If this is the root section, the path is an empty string.
      *
      * @return The path to this section with its name included.
      * @see Configuration#getFilePath()
+     * @since 1.0
      */
     public @NotNull String getPath()
     {
@@ -97,9 +105,11 @@ public class ConfigurationSection
     }
 
     /**
-     * The parent section this section is nested in.
+     * Gets the parent section of this section.
+     * <p>
+     * If this section has no parent, like the {@link Configuration root configuration}, the value is null.
      *
-     * @return The parent section or null if this section is the root.
+     * @return The parent section this section is nested in.
      * @since 1.0
      */
     public @Nullable ConfigurationSection getParent()
@@ -111,6 +121,7 @@ public class ConfigurationSection
      * Gets the root {@link Configuration} containing this configuration section and all other siblings.
      *
      * @return The root {@link Configuration}.
+     * @since 1.0
      */
     public final @NotNull Configuration getRoot()
     {
@@ -124,6 +135,7 @@ public class ConfigurationSection
      * {@link ConfigurationLoader#getSectionSeparator()} that immutability is not guaranteed.
      *
      * @return the section separator char
+     * @since 1.0
      */
     public final char getSectionSeparator()
     {
@@ -131,15 +143,15 @@ public class ConfigurationSection
     }
 
     /**
-     * Builds a *flat* view of the configuration tree that starts at this
-     * section, returning every node in a single {@link LinkedHashMap}.
+     * Builds a *flat* view of the configuration tree that starts at this section, returning every node in a single
+     * {@link LinkedHashMap}.
+     * <p>
      * <strong>How the map is populated</strong>
      * <ul>
-     *   <li>The **key** is the node’s <em>absolute path</em>—all path segments
-     *       joined with the character returned by {@link #getSectionSeparator()}.</li>
-     *   <li>The **value** is the object stored at that node.
-     *       If the node is an otherwise-empty {@code ConfigurationSection},
-     *       the section instance itself is stored as the value.</li>
+     *   <li>The **key** is the node’s <em>absolute path</em>—all path segments joined with the character returned by
+     *   {@link #getSectionSeparator()}.</li>
+     *   <li>The **value** is the object stored at that node. If the node is an otherwise-empty
+     *   {@code ConfigurationSection}, the section instance itself is stored as the value.</li>
      * </ul>
      * The map is created on every call, so modifications to the returned map do <em>not</em> affect the underlying
      * configuration, and vice versa. Insertion order corresponds to a depth-first traversal of the tree, making the
@@ -154,6 +166,7 @@ public class ConfigurationSection
      *         path: "/var/log/app.log"
      *         maxSizeMB: 10
      *       console: true
+     *       arguments:
      *     version: 1
      * }
      * </pre>
@@ -165,12 +178,14 @@ public class ConfigurationSection
      *   "logging.file.path"      = "/var/log/app.log",
      *   "logging.file.maxSizeMB" = "10",
      *   "logging.console"        = true,
+     *   "logging.arguments"      = null,
      *   "version"                = 1
      * }
      * </pre>
      *
-     * @return a new, modifiable {@code LinkedHashMap}&lt;String,Object&gt;
-     * containing every absolute node rooted at this section
+     * @return a new, modifiable {@code LinkedHashMap}&lt;String,Object&gt; containing every absolute node rooted at
+     * this section
+     * @since 1.0
      */
     public @NotNull LinkedHashMap<String, Object> getAbsoluteNodes()
     {
@@ -180,10 +195,14 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets the nodes that are only inside this section. If the node is a {@link ConfigurationSection} then the name of
-     * the section is the key and the object is the {@link ConfigurationSection} containing its inner nodes.
+     * Gets the nodes that are only inside this section.
+     * <p>
+     * If a node is {@link ConfigurationSection}, then the name of the section is the key and the value is the
+     * {@link ConfigurationSection} instance.
      *
      * @return An unmodifiable map with the nodes of this section.
+     * @see #getAbsoluteNodes()
+     * @since 1.0
      */
     @UnmodifiableView
     public @NotNull Map<String, Object> getNodes()
@@ -199,6 +218,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return If the path exists.
+     * @since 1.0
      */
     public boolean contains(@NotNull String path)
     {
@@ -213,6 +233,7 @@ public class ConfigurationSection
      * hierarchy behavior is preserved.
      *
      * @param section source section whose nodes should be merged into this one
+     * @see #putAll(Map)
      * @since 1.5
      */
     public void putAll(@NotNull ConfigurationSection section)
@@ -259,6 +280,7 @@ public class ConfigurationSection
      * @param <T>   compile-time type of {@code value}; the same reference is returned for fluent usage
      * @return the same object reference passed in as {@code value}
      * @implNote The node cache for the final segment of {@code path} is cleared before mutation.
+     * @see #NULL_VALUE
      * @since 1.0
      */
     @Contract("_,_ -> param2")
@@ -292,8 +314,8 @@ public class ConfigurationSection
     }
 
     /**
-     * Creates a new empty section or gets an existing section on the given path. If the path has section separators, the
-     * unexisting sections are created automatically.
+     * Creates a new empty section or gets an existing section on the given path. If the path has section separators,
+     * the unexisting sections are created automatically.
      * <p>
      * Any intermediate value at the path that's not an existing {@link ConfigurationSection}, gets replaced by a new
      * section.
@@ -393,6 +415,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return Optional containing boolean if found.
+     * @since 1.0
      */
     public @NotNull Optional<Boolean> getBoolean(@NotNull String path)
     {
@@ -409,6 +432,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return Optional containing character if found.
+     * @since 1.0
      */
     public @NotNull Optional<Character> getCharacter(@NotNull String path)
     {
@@ -421,10 +445,14 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets a {@link Collection} in this path. If no collection was found then an empty {@link ArrayList} is returned.
+     * Gets a {@link Collection} in this path.
+     * <p>
+     * If no collection was found then an {@link Collections#emptyList() empty list} is returned.
      *
      * @param path The path with sections separated by section separator char.
      * @return The collection in this path.
+     * @see #getCollection(String, Function)
+     * @since 1.0
      */
     public @NotNull Collection<?> getCollection(@NotNull String path)
     {
@@ -438,12 +466,14 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets a collection in this path, iterates through its elements and applies the transformer function to the
-     * objects, then adds the object to an {@link ArrayList}.
+     * Gets a collection in this path and maps the elements with the provided {@code transformer} to
+     * a new {@link ArrayList} containing such mapped elements.
      *
      * @param path        The path with sections separated by section separator char.
      * @param transformer The function that when applied, the returned object will be added to the list.
-     * @return An {@link ArrayList} containing the elements of the collection or an empty list if no collection was found.
+     * @return A new, mutable {@link ArrayList} that is a copy of the collection at the specified path with its elements
+     * mapped according to the transformer.
+     * @since 1.0
      */
     public @NotNull <T> ArrayList<T> getCollection(@NotNull String path, @NotNull Function<Object, T> transformer)
     {
@@ -462,6 +492,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return The {@link ConfigurationSection} in the end of the path or null if this section does not exist.
+     * @since 1.0
      */
     public @Nullable ConfigurationSection getConfigurationSection(@NotNull String path)
     {
@@ -478,6 +509,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return Optional containing number if found.
+     * @since 1.0
      */
     public @NotNull Optional<Number> getNumber(@NotNull String path)
     {
@@ -490,11 +522,20 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets an {@link Object} if one exists on this path. This object can be instance of any type that can be get by
-     * SnakeYAML and can also be a {@link ConfigurationSection}.
+     * Gets an {@link Object} if one exists on this path.
+     * <p>
+     * This object can be an instance of any type that is supported by the root's {@link ConfigurationLoader}, which may
+     * not be provided by a dedicated method of this class. It can also be a {@link ConfigurationSection}, or an object
+     * manually set with {@link #set(String, Object)} and {@link #putAll(Map)}.
+     * <p>
+     * The returned {@link Optional} might be empty, even if a {@code null} value is set to the node at the specified
+     * path. If usage of {@code null} objects is needed, the method {@link #getNullableObject(String)} is more fit for
+     * the occasion, since it will return a non-empty {@link Optional} for nodes assigned {@code null} objects.
      *
      * @param path The path with sections separated by section separator char.
-     * @return Optional containing object if found.
+     * @return Optional containing object if found and not null.
+     * @see #getNullableObject(String)
+     * @since 1.0
      */
     public @NotNull Optional<Object> getObject(@NotNull String path)
     {
@@ -529,6 +570,7 @@ public class ConfigurationSection
      *
      * @param path The path with sections separated by section separator char.
      * @return Optional containing string if found.
+     * @since 1.0
      */
     public @NotNull Optional<String> getString(@NotNull String path)
     {
@@ -541,7 +583,7 @@ public class ConfigurationSection
     }
 
     /**
-     * Gets all the node mapping from this {@link ConfigurationSection} as string.
+     * Gets all the node mappings from this {@link ConfigurationSection} as a string.
      *
      * @return String containing all the nodes from this section.
      */

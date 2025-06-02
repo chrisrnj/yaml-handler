@@ -73,6 +73,7 @@ public class Configuration extends ConfigurationSection
      * empty.
      *
      * @return The path of the file holding this configuration.
+     * @since 1.0
      */
     public @NotNull Optional<Path> getFilePath()
     {
@@ -92,6 +93,7 @@ public class Configuration extends ConfigurationSection
      * @param path Path of the file to save the configuration in.
      * @throws IOException              If failed to save the configuration to the given path.
      * @throws IllegalArgumentException If the path is pointing to an existing directory.
+     * @since 1.0
      */
     public void save(@NotNull Path path) throws IOException
     {
@@ -115,6 +117,7 @@ public class Configuration extends ConfigurationSection
      * Serializes the nodes and sections to a readable configuration text.
      *
      * @return The contents of this configuration as string.
+     * @since 1.0
      */
     public @NotNull String dump()
     {
