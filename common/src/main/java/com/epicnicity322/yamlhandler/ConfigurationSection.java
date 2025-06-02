@@ -448,11 +448,12 @@ public class ConfigurationSection
     public @NotNull <T> ArrayList<T> getCollection(@NotNull String path, @NotNull Function<Object, T> transformer)
     {
         Object value = get(path);
-        ArrayList<T> result = new ArrayList<>();
+        if (!(value instanceof Collection)) return new ArrayList<>();
 
-        if (value instanceof Collection) for (Object object : (Collection<?>) value)
-            result.add(transformer.apply(object));
+        Collection<?> collection = (Collection<?>) value;
+        ArrayList<T> result = new ArrayList<>(collection.size());
 
+        for (Object object : collection) result.add(transformer.apply(object));
         return result;
     }
 
