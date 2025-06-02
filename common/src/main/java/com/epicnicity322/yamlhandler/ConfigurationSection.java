@@ -34,7 +34,7 @@ public class ConfigurationSection
     public static final @NotNull Object NULL_VALUE = new Object();
     private final @NotNull LinkedHashMap<String, Object> nodes;
     private final @NotNull Map<String, Object> unmodifiableNodes;
-    private final @NotNull HashMap<String, Object> cache;
+    private final transient @NotNull HashMap<String, Object> cache = new HashMap<>();
     private final @NotNull String name;
     private final @NotNull String path;
     private final @NotNull Configuration root;
@@ -70,7 +70,6 @@ public class ConfigurationSection
 
         this.nodes = new LinkedHashMap<>(initialCapacity);
         this.unmodifiableNodes = Collections.unmodifiableMap(this.nodes);
-        this.cache = new HashMap<>(initialCapacity);
 
         if (nodes != null) convertToConfigurationSectionNodes(loader, this, nodes, this.nodes);
     }
