@@ -202,7 +202,7 @@ public class ConfigurationSection
      */
     public boolean contains(@NotNull String path)
     {
-        return get(path) != null;
+        return get(path, true) != null;
     }
 
     /**
@@ -357,8 +357,16 @@ public class ConfigurationSection
 
     protected @Nullable Object get(@NotNull String path)
     {
-        Object cached = cache.get(path);
-        if (cached != null) return cached;
+        return get(path, false);
+    }
+
+    private @Nullable Object get(@NotNull String path, boolean useNullValue)
+    {
+        if (cache.containsKey(path)) {
+            Object cached = cache.get(path);
+            if (useNullValue && cached == null) return NULL_VALUE;
+            return cached;
+        }
 
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
         ConfigurationSection section = this;
@@ -371,7 +379,8 @@ public class ConfigurationSection
                 if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
                 else return null; // Intermediate node not a section
             } else {
-                if (result != null) cache.put(path, result);
+                if (section.nodes.containsKey(key)) cache.put(path, result);
+                if (useNullValue && result == null) return NULL_VALUE;
                 return result;
             }
         }
