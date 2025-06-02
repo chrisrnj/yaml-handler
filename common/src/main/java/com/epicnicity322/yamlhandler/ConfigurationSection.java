@@ -432,7 +432,7 @@ public class ConfigurationSection
         Collection<?> result;
 
         if (value instanceof Collection) result = (Collection<?>) value;
-        else result = new ArrayList<>();
+        else result = Collections.emptyList();
 
         return result;
     }
