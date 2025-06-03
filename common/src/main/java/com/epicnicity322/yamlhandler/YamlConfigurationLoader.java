@@ -201,7 +201,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * @param path Path of the file holding the configuration to load.
      * @throws IOException                   Thrown if failed to load the configuration.
      * @throws InvalidConfigurationException If something went wrong while parsing the path contents as yaml.
-     * @throws IllegalArgumentException      If the path is a directory or not a readable file.
+     * @throws IllegalArgumentException      If the path is a directory or a non-readable file.
      * @see #load(String contents)
      */
     public @NotNull Configuration load(@NotNull Path path) throws IOException, InvalidConfigurationException
@@ -211,7 +211,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         try {
             return new Configuration(path, yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8)), this);
-        } catch (YAMLException e) {
+        } catch (YAMLException | IllegalArgumentException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
             throw new InvalidConfigurationException("Top level is not a Map.");
@@ -228,7 +228,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     {
         try {
             return new Configuration(null, yaml.load(contents), this);
-        } catch (YAMLException e) {
+        } catch (YAMLException | IllegalArgumentException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
             throw new InvalidConfigurationException("Top level is not a Map.");
