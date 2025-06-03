@@ -231,6 +231,8 @@ public class ConfigurationSection
      * <p>
      * Nested sections in {@code section} are converted to new instances of {@link ConfigurationSection}, so that the
      * hierarchy behavior is preserved.
+     * <p>
+     * The section separator of nested sections will be converted to this section's section separator.
      *
      * @param section source section whose nodes should be merged into this one
      * @see #putAll(Map)
@@ -279,6 +281,7 @@ public class ConfigurationSection
      * @param value value to assign, or {@code null} to delete the node/section
      * @param <T>   compile-time type of {@code value}; the same reference is returned for fluent usage
      * @return the same object reference passed in as {@code value}
+     * @throws IllegalArgumentException If the path has no tokens, according to {@link StringTokenizer#hasMoreTokens()} with the section separator as delimiter.
      * @implNote The node cache for the final segment of {@code path} is cleared before mutation.
      * @see #NULL_VALUE
      * @since 1.0
@@ -286,6 +289,9 @@ public class ConfigurationSection
     @Contract("_,_ -> param2")
     public <T> T set(@NotNull String path, @Nullable T value)
     {
+        StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
+        if (!tokens.hasMoreTokens()) throw new IllegalArgumentException("Invalid path has no tokens: '" + path + '\'');
+
         if (value instanceof ConfigurationSection) {
             createSection(path, ((ConfigurationSection) value).nodes);
             return value;
@@ -295,7 +301,6 @@ public class ConfigurationSection
             return value;
         }
 
-        StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
         ConfigurationSection current = this;
 
         while (tokens.hasMoreTokens()) {
@@ -322,6 +327,7 @@ public class ConfigurationSection
      *
      * @param path The path to create the section or get the already existing one.
      * @return The created section.
+     * @throws IllegalArgumentException If the path has no tokens, according to {@link StringTokenizer#hasMoreTokens()} with the section separator as delimiter.
      * @see #createSection(String, Map)
      * @since 1.0
      */
@@ -343,21 +349,21 @@ public class ConfigurationSection
      *
      * @param path The path to create the section or get the already existing one.
      * @return The created section.
+     * @throws IllegalArgumentException If the path has no tokens, according to {@link StringTokenizer#hasMoreTokens()} with the section separator as delimiter.
      * @since 1.5
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path, @Nullable Map<?, ?> nodes)
     {
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
+        if (!tokens.hasMoreTokens()) throw new IllegalArgumentException("Invalid path has no tokens: '" + path + '\'');
         ConfigurationSection current = this;
 
         while (tokens.hasMoreTokens()) {
             String part = tokens.nextToken();
 
             if (!(current.nodes.get(part) instanceof ConfigurationSection)) {
-                ConfigurationSection newSection = new ConfigurationSection(part, current, nodes);
-
                 current.removeCaches(part);
-                current.nodes.put(part, newSection);
+                current.nodes.put(part, new ConfigurationSection(part, current, nodes));
             }
 
             current = (ConfigurationSection) current.nodes.get(part);
@@ -391,17 +397,20 @@ public class ConfigurationSection
         }
 
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(sectionSeparator));
-        ConfigurationSection section = this;
+        StringBuilder cachePathBuilder = new StringBuilder();
+        ConfigurationSection current = this;
 
         while (tokens.hasMoreTokens()) {
-            String key = tokens.nextToken();
-            Object result = section.nodes.get(key);
+            String part = tokens.nextToken();
+            Object result = current.nodes.get(part);
+            cachePathBuilder.append(part);
 
             if (tokens.hasMoreTokens()) {
-                if (result instanceof ConfigurationSection) section = (ConfigurationSection) result;
+                cachePathBuilder.append(sectionSeparator);
+                if (result instanceof ConfigurationSection) current = (ConfigurationSection) result;
                 else return null; // Intermediate node not a section
             } else {
-                if (section.nodes.containsKey(key)) cache.put(path, result);
+                if (current.nodes.containsKey(part)) cache.put(cachePathBuilder.toString(), result);
                 if (useNullValue && result == null) return NULL_VALUE;
                 return result;
             }

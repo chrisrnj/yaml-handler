@@ -49,8 +49,10 @@ class YamlHandlerUtil
 
     static void convertToConfigurationSectionNodes(ConfigurationLoader loader, ConfigurationSection holder, Map<?, ?> nodes, Map<String, Object> output)
     {
+        String separator = Character.toString(holder.getSectionSeparator());
+
         for (Map.Entry<?, ?> entry : nodes.entrySet()) {
-            String key = entry.getKey().toString();
+            String key = entry.getKey().toString().replace(separator, "");
             Object value = entry.getValue();
 
             if (value == ConfigurationSection.NULL_VALUE) value = null;
