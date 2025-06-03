@@ -22,8 +22,7 @@ package com.epicnicity322.yamlhandler;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 class YamlHandlerUtil
 {
@@ -51,9 +50,10 @@ class YamlHandlerUtil
     {
         String separator = Character.toString(holder.getSectionSeparator());
 
-        for (Map.Entry<?, ?> entry : nodes.entrySet()) {
-            String key = entry.getKey().toString().replace(separator, "");
-            Object value = entry.getValue();
+        for (Map.Entry<?, ?> node : nodes.entrySet()) {
+            Object[] newNode = createMapsFromSeparators(separator, node.getKey().toString(), node.getValue());
+            String key = newNode[0].toString();
+            Object value = newNode[1];
 
             if (value == ConfigurationSection.NULL_VALUE) value = null;
             else {
@@ -67,6 +67,23 @@ class YamlHandlerUtil
 
             output.put(key, value);
         }
+    }
+
+    static Object[] createMapsFromSeparators(String separator, String key, Object value)
+    {
+        StringTokenizer tokens = new StringTokenizer(key, separator);
+        int tokenCount = tokens.countTokens();
+        if (tokenCount == 0) throw new IllegalArgumentException("The key '" + key + "' has no tokens!");
+        if (tokenCount == 1) return new Object[]{tokens.nextToken(), value};
+
+        Deque<String> parts = new ArrayDeque<>(tokenCount);
+        while (tokens.hasMoreTokens()) parts.push(tokens.nextToken());
+
+        key = parts.getLast();
+        parts.removeLast();
+
+        for (String part : parts) value = Collections.singletonMap(part, value);
+        return new Object[]{key, value};
     }
 
     static @Nullable Object tryDeserialize(ConfigurationSection section, CustomSerializer<?>[] serializers)
