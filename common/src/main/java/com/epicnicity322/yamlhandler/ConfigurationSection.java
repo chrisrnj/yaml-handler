@@ -54,7 +54,7 @@ public class ConfigurationSection
         // Parent can only be null if this is constructed by the root.
         if (parent == null) {
             if (!(this instanceof Configuration))
-                throw new IllegalArgumentException("Parent can not be null unless this is a root section.");
+                throw new NullPointerException("Parent can not be null unless this is a root section.");
             this.root = (Configuration) this;
             this.name = "";
             this.path = "";
@@ -254,6 +254,8 @@ public class ConfigurationSection
      * </ul>
      *
      * @param nodes a map of keys and values to add as nodes in this section
+     * @throws IllegalArgumentException If the map has a key which has no tokens, according to the behavior of {@link StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
+     * @throws IllegalArgumentException If a value of the map has failed to be deserialized by one of the {@link ConfigurationLoader}'s {@link com.epicnicity322.yamlhandler.serializers.CustomSerializer custom serializers}.
      * @since 1.5
      */
     public void putAll(@NotNull Map<?, ?> nodes)
@@ -281,7 +283,7 @@ public class ConfigurationSection
      * @param value value to assign, or {@code null} to delete the node/section
      * @param <T>   compile-time type of {@code value}; the same reference is returned for fluent usage
      * @return the same object reference passed in as {@code value}
-     * @throws IllegalArgumentException If the path has no tokens, according to {@link StringTokenizer#hasMoreTokens()} with the section separator as delimiter.
+     * @throws IllegalArgumentException If the path has no tokens, according to the behavior of {@link StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
      * @implNote The node cache for the final segment of {@code path} is cleared before mutation.
      * @see #NULL_VALUE
      * @since 1.0
@@ -349,7 +351,8 @@ public class ConfigurationSection
      *
      * @param path The path to create the section or get the already existing one.
      * @return The created section.
-     * @throws IllegalArgumentException If the path has no tokens, according to {@link StringTokenizer#hasMoreTokens()} with the section separator as delimiter.
+     * @throws IllegalArgumentException If the path or the map has a key which has no tokens, according to the behavior of {@link StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
+     * @throws IllegalArgumentException If a value of the map has failed to be deserialized by one of the {@link ConfigurationLoader}'s {@link com.epicnicity322.yamlhandler.serializers.CustomSerializer custom serializers}.
      * @since 1.5
      */
     public @NotNull ConfigurationSection createSection(@NotNull String path, @Nullable Map<?, ?> nodes)

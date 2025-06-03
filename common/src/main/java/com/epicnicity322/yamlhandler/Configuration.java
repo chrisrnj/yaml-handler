@@ -53,6 +53,8 @@ public class Configuration extends ConfigurationSection
      *
      * @param loader The loader used to get the configuration loading and saving options.
      * @param nodes  The map of nodes, any nested {@link Map} or {@link ConfigurationSection} will be converted to new instances of {@link ConfigurationSection}.
+     * @throws IllegalArgumentException If the map has a key which has no tokens, according to the behavior of {@link java.util.StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
+     * @throws IllegalArgumentException If a value of the map has failed to be deserialized by one of the {@link ConfigurationLoader}'s {@link com.epicnicity322.yamlhandler.serializers.CustomSerializer custom serializers}.
      * @since 1.5
      */
     public Configuration(@NotNull ConfigurationLoader loader, @Nullable Map<?, ?> nodes)
