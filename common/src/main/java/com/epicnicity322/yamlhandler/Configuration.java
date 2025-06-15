@@ -123,7 +123,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull String dump()
     {
-        return loader.dump(ConfigurationUtil.convertToMapNodes(this, true));
+        return loader.dump(this);
     }
 
     /**

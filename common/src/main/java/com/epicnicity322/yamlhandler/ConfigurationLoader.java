@@ -25,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Reader;
 import java.nio.file.Path;
-import java.util.Map;
 
 public interface ConfigurationLoader
 {
@@ -35,7 +34,7 @@ public interface ConfigurationLoader
 
     @NotNull Configuration load(@NotNull String contents) throws Exception;
 
-    @NotNull String dump(@NotNull Map<String, Object> nodes);
+    @NotNull String dump(@NotNull Configuration configuration);
 
     @NotNull CustomSerializer<?>[] getCustomSerializers();
 

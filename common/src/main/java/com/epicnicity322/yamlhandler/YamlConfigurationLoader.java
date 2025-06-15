@@ -236,9 +236,10 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     }
 
     @Override
-    public @NotNull String dump(@NotNull Map<String, Object> nodes)
+    public @NotNull String dump(@NotNull Configuration configuration)
     {
         return yaml.dump(nodes);
+        return yaml.dump(ConfigurationUtil.convertToMapNodes(configuration, true));
     }
 
     @Override
