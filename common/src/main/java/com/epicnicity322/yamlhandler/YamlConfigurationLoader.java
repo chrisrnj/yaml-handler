@@ -22,6 +22,7 @@ package com.epicnicity322.yamlhandler;
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -79,22 +80,17 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     /**
      * The char separating the sections.
      */
-    protected final char sectionSeparator;
+    private final char sectionSeparator;
 
     /**
-     * YAML dumper options.
+     * The amount of spaces to use as indent when dumping the configuration.
      */
-    private final @NotNull DumperOptions options = new DumperOptions();
+    private final int indent;
 
     /**
-     * YAML representer.
+     * The flow style of the dumped configuration.
      */
-    private final @NotNull Representer representer = new Representer(options);
-
-    /**
-     * YAML instance, holding the configuration.
-     */
-    protected final @NotNull Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()), representer, options);
+    private final @NotNull DumperOptions.FlowStyle flowStyle;
 
     /**
      * The defined serializers for specific types of classes.
@@ -166,13 +162,23 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     {
         this.customSerializers = Arrays.copyOf(customSerializers, customSerializers.length);
         this.sectionSeparator = sectionSeparator;
+        this.indent = indentSize;
+        this.flowStyle = flowStyle;
+    }
 
-        // Set the indent size
-        this.options.setIndent(indentSize);
+    private @NotNull Yaml yaml()
+    {
+        LoaderOptions loaderOptions = new LoaderOptions();
+        DumperOptions dumperOptions = new DumperOptions();
+        Representer representer = new Representer(dumperOptions);
 
-        // Set the default flow style
-        this.options.setDefaultFlowStyle(flowStyle);
-        this.representer.setDefaultFlowStyle(flowStyle);
+        loaderOptions.setProcessComments(true);
+        dumperOptions.setProcessComments(true);
+        dumperOptions.setIndent(indent);
+        dumperOptions.setDefaultFlowStyle(flowStyle);
+        representer.setDefaultFlowStyle(flowStyle);
+
+        return new Yaml(new SafeConstructor(loaderOptions), representer, dumperOptions, loaderOptions);
     }
 
     /**
@@ -210,7 +216,11 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         if (!Files.isReadable(path)) throw new IllegalArgumentException("Given path is not readable");
 
         try {
-            return new Configuration(path, yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8)), this);
+            Yaml yaml = yaml();
+            Map<?, ?> nodes = yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+            Map<String, Comment> comments = null;
+
+            return new YamlConfiguration(yaml, path, nodes, comments, this);
         } catch (YAMLException | IllegalArgumentException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
@@ -227,7 +237,11 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     public @NotNull Configuration load(@NotNull String contents) throws InvalidConfigurationException
     {
         try {
-            return new Configuration(null, yaml.load(contents), this);
+            Yaml yaml = yaml();
+            Map<?, ?> nodes = yaml.load(contents);
+            Map<String, Comment> comments = null;
+
+            return new YamlConfiguration(yaml, null, nodes, comments, this);
         } catch (YAMLException | IllegalArgumentException e) {
             throw new InvalidConfigurationException(e);
         } catch (ClassCastException e) {
@@ -238,7 +252,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     @Override
     public @NotNull String dump(@NotNull Configuration configuration)
     {
-        return yaml.dump(nodes);
+        Yaml yaml = configuration instanceof YamlConfiguration ? ((YamlConfiguration) configuration).yaml : yaml();
         return yaml.dump(ConfigurationUtil.convertToMapNodes(configuration, true));
     }
 
@@ -262,12 +276,23 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         YamlConfigurationLoader that = (YamlConfigurationLoader) o;
 
-        return sectionSeparator == that.sectionSeparator && options.getIndent() == that.options.getIndent() && options.getDefaultFlowStyle() == that.options.getDefaultFlowStyle() && Arrays.equals(customSerializers, that.customSerializers);
+        return sectionSeparator == that.sectionSeparator && indent == that.indent && flowStyle == that.flowStyle && Arrays.equals(customSerializers, that.customSerializers);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(sectionSeparator, options.getIndent(), options.getDefaultFlowStyle(), Arrays.hashCode(customSerializers));
+        return Objects.hash(sectionSeparator, indent, flowStyle, Arrays.hashCode(customSerializers));
+    }
+
+    private static final class YamlConfiguration extends Configuration
+    {
+        private final @NotNull Yaml yaml;
+
+        private YamlConfiguration(@NotNull Yaml yaml, @Nullable Path filePath, @Nullable Map<?, ?> nodes, @Nullable Map<String, Comment> comments, @NotNull ConfigurationLoader loader)
+        {
+            super(filePath, nodes, comments, loader);
+            this.yaml = yaml;
+        }
     }
 }
