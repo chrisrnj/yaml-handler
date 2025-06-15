@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-class YamlHandlerUtil
+class ConfigurationUtil
 {
     static void getAbsoluteNodes(ConfigurationSection input, Map<String, Object> output)
     {

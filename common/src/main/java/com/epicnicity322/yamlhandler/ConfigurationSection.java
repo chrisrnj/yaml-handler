@@ -24,7 +24,7 @@ import org.jetbrains.annotations.*;
 import java.util.*;
 import java.util.function.Function;
 
-import static com.epicnicity322.yamlhandler.YamlHandlerUtil.convertToConfigurationSectionNodes;
+import static com.epicnicity322.yamlhandler.ConfigurationUtil.convertToConfigurationSectionNodes;
 
 public class ConfigurationSection
 {
@@ -190,7 +190,7 @@ public class ConfigurationSection
     public @NotNull LinkedHashMap<String, Object> getAbsoluteNodes()
     {
         LinkedHashMap<String, Object> output = new LinkedHashMap<>();
-        YamlHandlerUtil.getAbsoluteNodes(this, output);
+        ConfigurationUtil.getAbsoluteNodes(this, output);
         return output;
     }
 

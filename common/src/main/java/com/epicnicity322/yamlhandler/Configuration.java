@@ -41,7 +41,7 @@ public class Configuration extends ConfigurationSection
      *
      * @param loader The loader used to get the configuration loading and saving options.
      * @see #Configuration(ConfigurationLoader, Map)
-     * @since 1.0
+     * @since 1.5
      */
     public Configuration(@NotNull ConfigurationLoader loader)
     {
@@ -123,7 +123,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull String dump()
     {
-        return loader.dump(YamlHandlerUtil.convertToMapNodes(this, true));
+        return loader.dump(ConfigurationUtil.convertToMapNodes(this, true));
     }
 
     /**
