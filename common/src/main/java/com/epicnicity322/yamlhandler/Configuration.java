@@ -27,14 +27,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class Configuration extends ConfigurationSection
 {
     private final @Nullable Path filePath;
     private final @NotNull ConfigurationLoader loader;
+    private @Nullable Map<String, Comment> comments;
 
     /**
      * Creates a configuration holder with no nodes.
@@ -59,15 +58,16 @@ public class Configuration extends ConfigurationSection
      */
     public Configuration(@NotNull ConfigurationLoader loader, @Nullable Map<?, ?> nodes)
     {
-        this(null, nodes, loader);
+        this(null, nodes, null, loader);
     }
 
-    protected Configuration(@Nullable Path filePath, @Nullable Map<?, ?> nodes, @NotNull ConfigurationLoader loader)
+    protected Configuration(@Nullable Path filePath, @Nullable Map<?, ?> nodes, @Nullable Map<String, Comment> comments, @NotNull ConfigurationLoader loader)
     {
         super("", null, nodes, loader);
 
         this.filePath = filePath;
         this.loader = loader;
+        this.comments = comments;
     }
 
     /**
@@ -124,6 +124,62 @@ public class Configuration extends ConfigurationSection
     public @NotNull String dump()
     {
         return loader.dump(ConfigurationUtil.convertToMapNodes(this, true));
+    }
+
+    /**
+     * Sets a comment on the specified node, with the possibility to inline it on the same line as the declaration.
+     * <p>
+     * A comment 'Hello World' set on the path 'A.B' will make so the configuration is dumped as the following example:
+     * <ul>
+     *     <li>
+     *         {@code inline = true}
+     *         <pre>
+     *             {@code
+     *             A:
+     *               B: true #Hello World
+     *             }
+     *         </pre>
+     *     </li>
+     *     <li>
+     *         {@code inline = false}
+     *         <pre>
+     *             {@code
+     *             A:
+     *               #Hello World
+     *               B: true
+     *             }
+     *         </pre>
+     *     </li>
+     * </ul>
+     *
+     * @param path    hierarchical path to the target node, whose segments are separated by the configured
+     *                section-separator character
+     * @param comment the comment to be assigned to the specified node, or {@code null} to remove any previously
+     *                assigned comment
+     * @param inline  whether to place the comment on the same line as the node declaration
+     * @throws IllegalArgumentException If the path has no tokens, according to the behavior of {@link StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
+     * @since 1.5
+     */
+    public void setComment(@NotNull String path, final @Nullable String comment, boolean inline)
+    {
+        StringTokenizer tokens = new StringTokenizer(path, Character.toString(getSectionSeparator()));
+        if (!tokens.hasMoreTokens()) throw new IllegalArgumentException("Invalid path has no tokens: '" + path + '\'');
+        synchronized (this) {
+            if (comment == null && comments == null) return;
+
+            StringBuilder commentPath = new StringBuilder();
+            while (tokens.hasMoreTokens()) {
+                commentPath.append(getSectionSeparator()).append(tokens.nextToken());
+            }
+
+            if (comment == null) {
+                comments.remove(commentPath.substring(1));
+                if (comments.isEmpty()) comments = null;
+            } else {
+                if (comments == null) comments = new HashMap<>();
+                comments.put(commentPath.substring(1), new Comment(comment, inline));
+            }
+        }
     }
 
     /**
