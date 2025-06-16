@@ -24,8 +24,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-class ConfigurationUtil
+final class ConfigurationUtil
 {
+    private ConfigurationUtil()
+    {
+    }
+
     static void getAbsoluteNodes(ConfigurationSection input, Map<String, Object> output)
     {
         Map<String, Object> nodes = input.getNodes();
@@ -69,7 +73,7 @@ class ConfigurationUtil
         }
     }
 
-    static Object[] createMapsFromSeparators(String separator, String key, Object value)
+    private static Object[] createMapsFromSeparators(String separator, String key, Object value)
     {
         StringTokenizer tokens = new StringTokenizer(key, separator);
         int tokenCount = tokens.countTokens();
@@ -86,7 +90,7 @@ class ConfigurationUtil
         return new Object[]{key, value};
     }
 
-    static @Nullable Object tryDeserialize(ConfigurationSection section, CustomSerializer<?>[] serializers)
+    private static @Nullable Object tryDeserialize(ConfigurationSection section, CustomSerializer<?>[] serializers)
     {
         Map<String, Object> nodes = section.getNodes();
 
@@ -122,7 +126,7 @@ class ConfigurationUtil
     }
 
     @SuppressWarnings("unchecked")
-    static <T> @Nullable Map<String, Object> trySerialize(T object, ConfigurationSection section)
+    private static <T> @Nullable Map<String, Object> trySerialize(T object, ConfigurationSection section)
     {
         if (object == null) return null;
         ConfigurationLoader loader = section.getRoot().getLoader();
@@ -132,7 +136,7 @@ class ConfigurationUtil
         return null;
     }
 
-    static Map<String, Object> fullySerializeNodes(Map<String, Object> nodes, ConfigurationSection section)
+    private static Map<String, Object> fullySerializeNodes(Map<String, Object> nodes, ConfigurationSection section)
     {
         Map<String, Object> finalNodes = new LinkedHashMap<>(nodes);
 
