@@ -127,6 +127,20 @@ public class Configuration extends ConfigurationSection
     }
 
     /**
+     * Represents the nodes and sections as a new map with the keys as the node's name, and value as the value stored by
+     * the node.
+     * <p>
+     * Inner sections and objects which the loader has assigned a {@link com.epicnicity322.yamlhandler.serializers.CustomSerializer custom serializer}
+     * are also included in the returned map as an inner map object.
+     *
+     * @return a new, mutable map representing this configuration's nodes
+     */
+    public @NotNull Map<String, Object> asMap()
+    {
+        return ConfigurationUtil.convertToMapNodes(this, true);
+    }
+
+    /**
      * Sets a comment on the specified node, with the possibility to inline it on the same line as the declaration.
      * <p>
      * A comment 'Hello World' set on the path 'A.B' will make so the configuration is dumped as the following example:

@@ -253,7 +253,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     public @NotNull String dump(@NotNull Configuration configuration)
     {
         Yaml yaml = configuration instanceof YamlConfiguration ? ((YamlConfiguration) configuration).yaml : yaml();
-        return yaml.dump(ConfigurationUtil.convertToMapNodes(configuration, true));
+        return yaml.dump(configuration.asMap());
     }
 
     @Override
