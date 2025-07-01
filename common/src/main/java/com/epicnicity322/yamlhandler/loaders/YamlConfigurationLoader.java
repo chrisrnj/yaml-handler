@@ -88,6 +88,11 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     private final int indent;
 
     /**
+     * Whether comments will be processed.
+     */
+    private final boolean comments;
+
+    /**
      * The flow style of the dumped configuration.
      */
     private final @NotNull DumperOptions.FlowStyle flowStyle;
@@ -100,8 +105,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     /**
      * Constructs a loader with the <a href="#default-configuration">default options</a>.
      * <p>
-     * Equivalent to invoking {@link #YamlConfigurationLoader(char, int, org.yaml.snakeyaml.DumperOptions.FlowStyle)
-     * YamlConfigurationLoader('.', 2, FlowStyle.BLOCK)}.
+     * Equivalent to invoking {@link #YamlConfigurationLoader(char, int, org.yaml.snakeyaml.DumperOptions.FlowStyle, boolean)
+     * YamlConfigurationLoader('.', 2, FlowStyle.BLOCK, true)}.
      *
      * @since 1.0
      */
@@ -122,7 +127,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      */
     public YamlConfigurationLoader(@NotNull CustomSerializer<?>... customSerializers)
     {
-        this('.', 2, DumperOptions.FlowStyle.BLOCK, customSerializers);
+        this('.', 2, DumperOptions.FlowStyle.BLOCK, true, customSerializers);
     }
 
     /**
@@ -137,9 +142,9 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      * @throws NullPointerException     if {@code flowStyle} is {@code null}
      * @since 1.0
      */
-    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle)
+    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle, boolean comments)
     {
-        this(sectionSeparator, indentSize, flowStyle, new CustomSerializer[0]);
+        this(sectionSeparator, indentSize, flowStyle, comments, new CustomSerializer[0]);
     }
 
     /**
@@ -158,12 +163,13 @@ public class YamlConfigurationLoader implements ConfigurationLoader
      *                                  {@code customSerializers} is {@code null}
      * @since 1.5
      */
-    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle, @NotNull CustomSerializer<?> @NotNull ... customSerializers)
+    public YamlConfigurationLoader(char sectionSeparator, @Range(from = 1, to = 10) int indentSize, @NotNull DumperOptions.FlowStyle flowStyle, boolean comments, @NotNull CustomSerializer<?> @NotNull ... customSerializers)
     {
         this.customSerializers = Arrays.copyOf(customSerializers, customSerializers.length);
         this.sectionSeparator = sectionSeparator;
         this.indent = indentSize;
         this.flowStyle = flowStyle;
+        this.comments = comments;
     }
 
     private @NotNull Yaml yaml()
@@ -276,13 +282,13 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         YamlConfigurationLoader that = (YamlConfigurationLoader) o;
 
-        return sectionSeparator == that.sectionSeparator && indent == that.indent && flowStyle == that.flowStyle && Arrays.equals(customSerializers, that.customSerializers);
+        return comments == that.comments && sectionSeparator == that.sectionSeparator && indent == that.indent && flowStyle == that.flowStyle && Arrays.equals(customSerializers, that.customSerializers);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(sectionSeparator, indent, flowStyle, Arrays.hashCode(customSerializers));
+        return Objects.hash(comments, sectionSeparator, indent, flowStyle, Arrays.hashCode(customSerializers));
     }
 
     private static final class YamlConfiguration extends Configuration

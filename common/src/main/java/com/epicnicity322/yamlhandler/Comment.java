@@ -20,6 +20,7 @@
 package com.epicnicity322.yamlhandler;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -30,23 +31,28 @@ import java.util.Objects;
  */
 public class Comment
 {
-    private final @NotNull String comment;
-    private final boolean inline;
+    public static final @NotNull Comment NULL_COMMENT = new Comment(null, null);
+    private final @Nullable String blockComment;
+    private final  @Nullable String inlineComment;
 
-    public Comment(@NotNull String comment, boolean inline)
-    {
-        this.comment = comment;
-        this.inline = inline;
+    public static @NotNull Comment of(@Nullable String blockComment, @Nullable String inlineComment) {
+        return blockComment == null && inlineComment == null ? NULL_COMMENT : new Comment(blockComment, inlineComment);
     }
 
-    public @NotNull String comment()
+    private Comment(@Nullable String blockComment, @Nullable String inlineComment)
     {
-        return comment;
+        this.blockComment = blockComment;
+        this.inlineComment = inlineComment;
     }
 
-    public boolean inline()
+    public @Nullable String blockComment()
     {
-        return inline;
+        return blockComment;
+    }
+
+    public  @Nullable String inlineComment()
+    {
+        return inlineComment;
     }
 
     @Override
@@ -54,22 +60,22 @@ public class Comment
     {
         if (o == this) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Comment comment1 = (Comment) o;
-        return inline == comment1.inline && Objects.equals(comment, comment1.comment);
+        Comment comment = (Comment) o;
+        return Objects.equals(blockComment, comment.blockComment) && Objects.equals(inlineComment, comment.inlineComment);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(comment, inline);
+        return Objects.hash(blockComment, inlineComment);
     }
 
     @Override
     public String toString()
     {
         return "Comment[" +
-                "comment='" + comment + '\'' +
-                ", inline=" + inline +
+                "block='" + blockComment + '\'' +
+                ", inline='" + inlineComment + '\'' +
                 ']';
     }
 }

@@ -134,6 +134,7 @@ public class Configuration extends ConfigurationSection
      * are also included in the returned map as an inner map object.
      *
      * @return a new, mutable map representing this configuration's nodes
+     * @since 1.5
      */
     public @NotNull Map<String, Object> asMap()
     {
@@ -174,25 +175,35 @@ public class Configuration extends ConfigurationSection
      * @throws IllegalArgumentException If the path has no tokens, according to the behavior of {@link StringTokenizer} using {@link #getSectionSeparator()} as delimiter.
      * @since 1.5
      */
-    public void setComment(@NotNull String path, final @Nullable String comment, boolean inline)
+    public void setComment(@NotNull String path, @Nullable String comment, boolean inline)
     {
         StringTokenizer tokens = new StringTokenizer(path, Character.toString(getSectionSeparator()));
         if (!tokens.hasMoreTokens()) throw new IllegalArgumentException("Invalid path has no tokens: '" + path + '\'');
-        synchronized (this) {
-            if (comment == null && comments == null) return;
+        if (comment == null && comments == null) return;
 
-            StringBuilder commentPath = new StringBuilder();
-            while (tokens.hasMoreTokens()) {
-                commentPath.append(getSectionSeparator()).append(tokens.nextToken());
-            }
+        StringJoiner joiner = new StringJoiner(Character.toString(getSectionSeparator()));
+        while (tokens.hasMoreTokens()) joiner.add(tokens.nextToken());
 
-            if (comment == null) {
-                comments.remove(commentPath.substring(1));
-                if (comments.isEmpty()) comments = null;
-            } else {
-                if (comments == null) comments = new HashMap<>();
-                comments.put(commentPath.substring(1), new Comment(comment, inline));
-            }
+        String commentPath = joiner.toString();
+        Comment previous = comments == null ? Comment.NULL_COMMENT : comments.getOrDefault(commentPath, Comment.NULL_COMMENT);
+        Comment newComment = Comment.of(inline ? previous.blockComment() : comment, inline ? comment : previous.inlineComment());
+        if (newComment.blockComment() == null && newComment.inlineComment() == null) newComment = null;
+
+        if (newComment == null) removeComment(commentPath);
+        else putComment(commentPath, newComment);
+    }
+
+    private void putComment(@NotNull String commentPath, @NotNull Comment comment)
+    {
+        if (comments == null) this.comments = new HashMap<>();
+        comments.put(commentPath, comment);
+    }
+
+    private void removeComment(@NotNull String commentPath)
+    {
+        if (comments != null) {
+            comments.remove(commentPath);
+            if (comments.isEmpty()) this.comments = null;
         }
     }
 
