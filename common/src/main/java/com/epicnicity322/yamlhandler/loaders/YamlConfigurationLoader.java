@@ -17,8 +17,10 @@
  * SOFTWARE.
  */
 
-package com.epicnicity322.yamlhandler;
+package com.epicnicity322.yamlhandler.loaders;
 
+import com.epicnicity322.yamlhandler.Comment;
+import com.epicnicity322.yamlhandler.Configuration;
 import com.epicnicity322.yamlhandler.exceptions.InvalidConfigurationException;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;

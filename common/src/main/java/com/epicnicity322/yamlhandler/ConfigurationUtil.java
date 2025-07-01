@@ -19,6 +19,7 @@
 
 package com.epicnicity322.yamlhandler;
 
+import com.epicnicity322.yamlhandler.loaders.ConfigurationLoader;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,6 +74,28 @@ final class ConfigurationUtil
         }
     }
 
+    static Map<String, Object> convertToMapNodes(ConfigurationSection section, boolean serialize)
+    {
+        Map<String, Object> sectionNodes = section.getNodes();
+        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>((int) Math.ceil(sectionNodes.size() / .75f));
+
+        for (Map.Entry<String, Object> entry : sectionNodes.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (value instanceof ConfigurationSection) {
+                value = convertToMapNodes((ConfigurationSection) value, serialize);
+            } else if (serialize) {
+                Map<String, Object> serialized = trySerialize(value, section);
+                if (serialized != null) value = serialized;
+            }
+
+            mapNodes.put(key, value);
+        }
+
+        return mapNodes;
+    }
+
     private static Object[] createMapsFromSeparators(String separator, String key, Object value)
     {
         StringTokenizer tokens = new StringTokenizer(key, separator);
@@ -101,28 +124,6 @@ final class ConfigurationUtil
             }
         }
         return null;
-    }
-
-    static Map<String, Object> convertToMapNodes(ConfigurationSection section, boolean serialize)
-    {
-        Map<String, Object> sectionNodes = section.getNodes();
-        LinkedHashMap<String, Object> mapNodes = new LinkedHashMap<>((int) Math.ceil(sectionNodes.size() / .75f));
-
-        for (Map.Entry<String, Object> entry : sectionNodes.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            if (value instanceof ConfigurationSection) {
-                value = convertToMapNodes((ConfigurationSection) value, serialize);
-            } else if (serialize) {
-                Map<String, Object> serialized = trySerialize(value, section);
-                if (serialized != null) value = serialized;
-            }
-
-            mapNodes.put(key, value);
-        }
-
-        return mapNodes;
     }
 
     @SuppressWarnings("unchecked")

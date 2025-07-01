@@ -19,6 +19,7 @@
 
 package com.epicnicity322.yamlhandler;
 
+import com.epicnicity322.yamlhandler.loaders.ConfigurationLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

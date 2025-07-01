@@ -17,8 +17,9 @@
  * SOFTWARE.
  */
 
-package com.epicnicity322.yamlhandler;
+package com.epicnicity322.yamlhandler.loaders;
 
+import com.epicnicity322.yamlhandler.Configuration;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,12 @@ public interface ConfigurationLoader
 
     @NotNull Configuration load(@NotNull String contents) throws Exception;
 
+    /**
+     * Serializes the configuration's nodes and sections to readable configuration text.
+     *
+     * @return The contents of the configuration as string.
+     * @since 1.5
+     */
     @NotNull String dump(@NotNull Configuration configuration);
 
     @NotNull CustomSerializer<?>[] getCustomSerializers();
