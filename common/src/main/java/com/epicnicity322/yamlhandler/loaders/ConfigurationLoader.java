@@ -19,6 +19,7 @@
 
 package com.epicnicity322.yamlhandler.loaders;
 
+import com.epicnicity322.yamlhandler.Comment;
 import com.epicnicity322.yamlhandler.Configuration;
 import com.epicnicity322.yamlhandler.serializers.CustomSerializer;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Reader;
 import java.nio.file.Path;
+import java.util.Map;
 
 public interface ConfigurationLoader
 {
@@ -38,10 +40,12 @@ public interface ConfigurationLoader
     /**
      * Serializes the configuration's nodes and sections to readable configuration text.
      *
+     * @param configuration The configuration to serialize.
+     * @param comments      The comments of the configuration's nodes.
      * @return The contents of the configuration as string.
      * @since 1.5
      */
-    @NotNull String dump(@NotNull Configuration configuration);
+    @NotNull String dump(@NotNull Configuration configuration, @Nullable Map<String, Comment> comments);
 
     @NotNull CustomSerializer<?>[] getCustomSerializers();
 

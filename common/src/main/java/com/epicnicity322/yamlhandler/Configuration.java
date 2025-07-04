@@ -124,7 +124,7 @@ public class Configuration extends ConfigurationSection
      */
     public @NotNull String dump()
     {
-        return loader.dump(this);
+        return loader.dump(this, comments);
     }
 
     /**
