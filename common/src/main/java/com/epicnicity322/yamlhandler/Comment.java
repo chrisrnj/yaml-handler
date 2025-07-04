@@ -33,11 +33,7 @@ public class Comment
 {
     public static final @NotNull Comment NULL_COMMENT = new Comment(null, null);
     private final @Nullable String blockComment;
-    private final  @Nullable String inlineComment;
-
-    public static @NotNull Comment of(@Nullable String blockComment, @Nullable String inlineComment) {
-        return blockComment == null && inlineComment == null ? NULL_COMMENT : new Comment(blockComment, inlineComment);
-    }
+    private final @Nullable String inlineComment;
 
     private Comment(@Nullable String blockComment, @Nullable String inlineComment)
     {
@@ -45,12 +41,20 @@ public class Comment
         this.inlineComment = inlineComment;
     }
 
+    public static @NotNull Comment of(@Nullable String blockComment, @Nullable String inlineComment)
+    {
+        if (blockComment != null && blockComment.isEmpty()) blockComment = null;
+        if (inlineComment != null && inlineComment.isEmpty()) inlineComment = null;
+
+        return blockComment == null && inlineComment == null ? NULL_COMMENT : new Comment(blockComment, inlineComment);
+    }
+
     public @Nullable String blockComment()
     {
         return blockComment;
     }
 
-    public  @Nullable String inlineComment()
+    public @Nullable String inlineComment()
     {
         return inlineComment;
     }
