@@ -31,15 +31,15 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.representer.Representer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -180,8 +180,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         DumperOptions dumperOptions = new DumperOptions();
         Representer representer = new Representer(dumperOptions);
 
-        loaderOptions.setProcessComments(true);
-        dumperOptions.setProcessComments(true);
+        loaderOptions.setProcessComments(comments);
+        dumperOptions.setProcessComments(comments);
         dumperOptions.setIndent(indent);
         dumperOptions.setDefaultFlowStyle(flowStyle);
         representer.setDefaultFlowStyle(flowStyle);
@@ -225,8 +225,15 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
         try {
             Yaml yaml = yaml();
-            Map<?, ?> nodes = yaml.load(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+            String contents = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            Map<?, ?> nodes = yaml.load(contents);
             Map<String, Comment> comments = null;
+
+            if (this.comments) {
+                try (StringReader reader = new StringReader(contents)) {
+                    comments = YamlUtil.retrieveComments(yaml.compose(reader), sectionSeparator);
+                }
+            }
 
             return new YamlConfiguration(yaml, path, nodes, comments, this);
         } catch (YAMLException | IllegalArgumentException e) {
@@ -249,6 +256,12 @@ public class YamlConfigurationLoader implements ConfigurationLoader
             Map<?, ?> nodes = yaml.load(contents);
             Map<String, Comment> comments = null;
 
+            if (this.comments) {
+                try (StringReader reader = new StringReader(contents)) {
+                    comments = YamlUtil.retrieveComments(yaml.compose(reader), sectionSeparator);
+                }
+            }
+
             return new YamlConfiguration(yaml, null, nodes, comments, this);
         } catch (YAMLException | IllegalArgumentException e) {
             throw new InvalidConfigurationException(e);
@@ -261,7 +274,22 @@ public class YamlConfigurationLoader implements ConfigurationLoader
     public @NotNull String dump(@NotNull Configuration configuration, @Nullable Map<String, Comment> comments)
     {
         Yaml yaml = configuration instanceof YamlConfiguration ? ((YamlConfiguration) configuration).yaml : yaml();
-        return yaml.dump(configuration.asMap());
+        Map<String, Object> nodes = configuration.asMap();
+
+        Node node = yaml.represent(nodes);
+
+        if (this.comments && comments != null) {
+            // NOTE: The configuration with dumper options where process comments is set to false, could still reach
+            //this part of the code, and have unnecessary processing.
+            YamlUtil.assignComments(node, null, sectionSeparator, new HashMap<>(comments));
+        }
+
+        try (StringWriter writer = new StringWriter()) {
+            yaml.serialize(node, writer);
+            return writer.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e); //StringWriter does not throw IOException.
+        }
     }
 
     @Override
