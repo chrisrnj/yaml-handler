@@ -30,6 +30,39 @@
 
     <artifactId>yamlhandler-bukkit</artifactId>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>com.epicnicity322:yamlhandler-common</artifact>
+                                    <excludes>
+                                        <exclude>org/yaml/**</exclude>
+                                        <exclude>META-INF/versions/**</exclude>
+                                        <exclude>META-INF/maven/org.yaml/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <repositories>
         <repository>
             <id>spigot-repo</id>
@@ -42,6 +75,12 @@
             <artifactId>yamlhandler-common</artifactId>
             <groupId>com.epicnicity322</groupId>
             <version>1.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
         </dependency>
         <dependency>
