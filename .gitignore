@@ -4,3 +4,4 @@ target/
 .idea/
 *.iml
 *.ini
+**/dependency-reduced-pom.xml
