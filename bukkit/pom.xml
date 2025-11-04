@@ -24,7 +24,7 @@
     <parent>
         <artifactId>yamlhandler</artifactId>
         <groupId>com.epicnicity322</groupId>
-        <version>1.5</version>
+        <version>1.5.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -71,7 +71,7 @@
         <dependency>
             <artifactId>yamlhandler-common</artifactId>
             <groupId>com.epicnicity322</groupId>
-            <version>1.5</version>
+            <version>1.5.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.yaml</groupId>
