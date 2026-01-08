@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2025 Christiano Rangel
+  ~ Copyright (c) 2025-2026 Christiano Rangel
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
     <parent>
         <artifactId>yamlhandler</artifactId>
         <groupId>com.epicnicity322</groupId>
-        <version>1.5.1</version>
+        <version>1.5.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -42,18 +42,6 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
-                        <configuration>
-                            <filters>
-                                <filter>
-                                    <artifact>com.epicnicity322:yamlhandler-common</artifact>
-                                    <excludes>
-                                        <exclude>org/yaml/**</exclude>
-                                        <exclude>META-INF/versions/**</exclude>
-                                        <exclude>META-INF/maven/org.yaml/**</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -71,7 +59,7 @@
         <dependency>
             <artifactId>yamlhandler-common</artifactId>
             <groupId>com.epicnicity322</groupId>
-            <version>1.5.1</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.yaml</groupId>
@@ -83,7 +71,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.10-R0.1-SNAPSHOT</version>
+            <version>1.21.11-R0.1-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

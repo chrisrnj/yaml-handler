@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2020-2025 Christiano Rangel
+  ~ Copyright (c) 2020-2026 Christiano Rangel
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
     <groupId>com.epicnicity322</groupId>
     <artifactId>yamlhandler</artifactId>
-    <version>1.5.1</version>
+    <version>1.5.2</version>
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
@@ -43,6 +43,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
     </properties>
 
     <build>
