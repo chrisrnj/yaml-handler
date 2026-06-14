@@ -43,12 +43,13 @@
         <maven.compiler.release>8</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
     </properties>
 
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
-            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
+            <!-- Source: https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

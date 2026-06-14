@@ -60,12 +60,6 @@
             <artifactId>yamlhandler-common</artifactId>
             <groupId>com.epicnicity322</groupId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
             <scope>compile</scope>
         </dependency>
         <dependency>
