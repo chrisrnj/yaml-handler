@@ -24,7 +24,7 @@
     <parent>
         <artifactId>yamlhandler</artifactId>
         <groupId>com.epicnicity322</groupId>
-        <version>1.5.2</version>
+        <version>1.5.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.11-R0.1-SNAPSHOT</version>
+            <version>26.1.2-R0.1-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
