@@ -29,6 +29,7 @@
     <modules>
         <module>common</module>
         <module>bukkit</module>
+        <module>compat</module>
     </modules>
 
     <licenses>
@@ -41,7 +42,7 @@
     <properties>
         <maven.compiler.release>8</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     </properties>
 
     <build>
@@ -51,7 +52,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.1</version>
+                <version>3.15.0</version>
             </plugin>
         </plugins>
     </build>
@@ -61,7 +62,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>26.0.2-1</version>
+            <version>26.1.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
